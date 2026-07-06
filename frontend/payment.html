@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>订单支付 - My-eBookStore</title>
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="brand"><span class="brand-mark">书</span>My-eBookStore</a>
+      <div class="header-actions" style="margin-left:auto">
+        <div id="authArea"></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container page-section" style="max-width:640px">
+    <div class="steps-bar">
+      <div class="step-item done"><span class="step-num">1</span>购物车</div>
+      <div class="step-item done"><span class="step-num">2</span>确认订单</div>
+      <div class="step-item active"><span class="step-num">3</span>支付</div>
+      <div class="step-item"><span class="step-num">4</span>完成</div>
+    </div>
+
+    <div class="card">
+      <div class="card-body text-center">
+        <p class="text-muted">订单号：<span id="payOrderNo">-</span></p>
+        <p style="font-size:32px;font-weight:700;color:var(--color-danger);margin:var(--space-3) 0" id="payAmount">¥0.00</p>
+
+        <h3 class="mb-4" style="font-size:15px;text-align:left">选择支付方式</h3>
+        <div class="pay-methods">
+          <div class="pay-method selected" data-method="alipay">
+            <div class="pay-icon">💰</div>支付宝
+          </div>
+          <div class="pay-method" data-method="wechat">
+            <div class="pay-icon">💬</div>微信支付
+          </div>
+          <div class="pay-method" data-method="card">
+            <div class="pay-icon">💳</div>银行卡
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-primary btn-block" id="confirmPayBtn">确认支付</button>
+
+        <label class="checkbox-line mt-4" style="justify-content:center">
+          <input type="checkbox" id="simulateFailCheckbox" />
+          模拟支付失败（仅用于前端演示，对接后端后可移除）
+        </label>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/payment.js"></script>
+</body>
+</html>

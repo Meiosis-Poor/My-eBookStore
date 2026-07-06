@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>图书详情 - My-eBookStore</title>
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="brand"><span class="brand-mark">书</span>My-eBookStore</a>
+      <nav class="main-nav">
+        <a href="index.html">首页</a>
+        <a href="search.html">全部图书</a>
+        <a href="promotions.html">促销活动</a>
+      </nav>
+      <div class="header-search">
+        <form action="search.html" method="get">
+          <input type="search" name="keyword" class="form-control" placeholder="搜索书名 / 作者 / ISBN" />
+          <button type="submit" class="btn btn-primary">搜索</button>
+        </form>
+      </div>
+      <div class="header-actions">
+        <a href="cart.html" class="cart-link">🛒<span class="cart-badge" id="cartBadge" hidden>0</span></a>
+        <div id="authArea"></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container page-section">
+    <div class="breadcrumb">
+      <a href="index.html">首页</a><span class="sep">/</span>
+      <a href="search.html">全部图书</a><span class="sep">/</span>
+      <span class="current" id="breadcrumbTitle">图书详情</span>
+    </div>
+
+    <div class="book-detail-layout">
+      <div class="detail-cover">
+        <span id="bookCoverIcon">📘</span>
+      </div>
+
+      <div class="detail-info">
+        <h1 id="bookTitle">加载中...</h1>
+        <div class="detail-store">
+          由 <a href="#" id="bookStoreLink">-</a> 提供 &nbsp;|&nbsp;
+          <span class="badge badge-success" id="bookStock">库存加载中</span>
+        </div>
+
+        <div class="detail-meta-list">
+          <div>作者：<b id="bookAuthor">-</b></div>
+          <div>出版社：<b id="bookPublisher">-</b></div>
+          <div>ISBN：<b id="bookIsbn">-</b></div>
+          <div>分类：<b id="bookCategory">-</b></div>
+          <div>出版日期：<b id="bookPublishDate">-</b></div>
+          <div>累计销量：<b id="bookSales">-</b> 件</div>
+        </div>
+
+        <div class="detail-price-box">
+          <div>
+            <span class="price-now" id="bookPrice">0.00</span>
+            <span class="text-muted" style="text-decoration:line-through;margin-left:8px" id="bookOriginPrice"></span>
+          </div>
+          <div style="margin-left:auto" class="flex items-center gap-3">
+            <span class="text-muted" style="font-size:13px">数量</span>
+            <div class="qty-stepper">
+              <button type="button" id="qtyMinus">−</button>
+              <input type="number" id="qtyInput" value="1" min="1" />
+              <button type="button" id="qtyPlus">＋</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-actions">
+          <button type="button" class="btn btn-accent" id="addToCartBtn">加入购物车</button>
+          <button type="button" class="btn btn-primary" id="buyNowBtn">立即购买</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-tabs">
+      <button type="button" class="active" data-panel="panelDescription">图书简介</button>
+      <button type="button" data-panel="panelSimilar">相似推荐</button>
+    </div>
+
+    <div id="panelDescription" class="detail-panel active">
+      <div class="card"><div class="card-body" id="bookDescription">加载中...</div></div>
+    </div>
+    <div id="panelSimilar" class="detail-panel">
+      <!-- 相似推荐：由 BookAPI.similar() 基于图书向量 embedding 相似度计算，接口预留于 api.js -->
+      <div class="book-grid" id="similarGrid"></div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-bottom">© 2026 My-eBookStore 网上书店系统 · 课程设计项目 9 组</div>
+  </footer>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/book-detail.js"></script>
+</body>
+</html>

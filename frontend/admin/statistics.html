@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>数据统计与分析 - My-eBookStore 后台管理</title>
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/admin.css" />
+</head>
+<body class="admin-body">
+
+  <div class="admin-shell">
+    <aside class="admin-sidebar" id="adminSidebar">
+      <div class="admin-brand"><span class="brand-mark">书</span>后台管理</div>
+      <div class="admin-role-tag" id="adminRoleTag">当前角色<span class="role-name">-</span></div>
+      <nav class="admin-menu">
+        <div class="menu-group-title">概览</div>
+        <a href="dashboard.html" data-nav="dashboard"><span class="menu-icon">📊</span>数据总览</a>
+        <div class="menu-group-title">经营管理</div>
+        <a href="books.html" data-nav="books"><span class="menu-icon">📚</span>图书管理</a>
+        <a href="orders.html" data-nav="orders"><span class="menu-icon">🧾</span>订单管理</a>
+        <a href="users.html" data-nav="users"><span class="menu-icon">👥</span>用户管理</a>
+        <a href="stores.html" data-nav="stores" data-role-only="platform_admin"><span class="menu-icon">🏬</span>店铺管理</a>
+        <a href="promotions.html" data-nav="promotions"><span class="menu-icon">🎁</span>促销活动管理</a>
+        <a href="statistics.html" data-nav="statistics"><span class="menu-icon">📈</span>数据统计与分析</a>
+      </nav>
+      <div class="admin-sidebar-footer">
+        <button type="button" id="adminLogoutBtn">⏻ 退出登录</button>
+      </div>
+    </aside>
+
+    <div class="admin-main">
+      <header class="admin-topbar">
+        <span class="page-title">数据统计与分析</span>
+        <div class="admin-topbar-actions">
+          <a href="../index.html" class="btn-text" target="_blank">查看前台 →</a>
+          <span id="adminTopUser">-</span>
+        </div>
+      </header>
+
+      <div class="admin-content">
+        <div class="admin-tabs">
+          <button type="button" class="active" data-range="7d">近 7 天</button>
+          <button type="button" data-range="30d">近 30 天</button>
+          <button type="button" data-range="90d">近 90 天</button>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="card kpi-card">
+            <div class="kpi-value" id="statTodaySales">¥0.00</div>
+            <div class="kpi-label">区间销售额</div>
+          </div>
+          <div class="card kpi-card">
+            <div class="kpi-value" id="statTodayOrders">0</div>
+            <div class="kpi-label">区间订单数</div>
+          </div>
+          <div class="card kpi-card">
+            <div class="kpi-value" id="statTotalUsers">0</div>
+            <div class="kpi-label">活跃用户数</div>
+          </div>
+        </div>
+
+        <div class="panel-grid">
+          <div class="card">
+            <div class="panel-header"><h3>销售额趋势</h3></div>
+            <div class="chart-box"><div class="bar-chart" id="trendChart"></div></div>
+          </div>
+          <div class="card">
+            <div class="panel-header"><h3>热门图书排行</h3></div>
+            <div class="chart-box"><div class="rank-list" id="hotBookList"></div></div>
+          </div>
+        </div>
+
+        <div class="card" data-role-only="platform_admin">
+          <div class="panel-header"><h3>风控分析：疑似异常刷单店铺</h3></div>
+          <div class="card-body" id="riskStoreList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/mock-data.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/common.js"></script>
+  <script src="../js/admin/common.js"></script>
+  <script src="../js/admin/statistics.js"></script>
+</body>
+</html>

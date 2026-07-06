@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My-eBookStore 网上书店 - 首页</title>
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ============ 顶部导航 ============ -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="brand"><span class="brand-mark">书</span>My-eBookStore</a>
+      <nav class="main-nav">
+        <a href="index.html" class="active">首页</a>
+        <a href="search.html">全部图书</a>
+        <a href="promotions.html">促销活动</a>
+      </nav>
+      <div class="header-search">
+        <form action="search.html" method="get">
+          <input type="search" name="keyword" class="form-control" placeholder="搜索书名 / 作者 / ISBN" />
+          <button type="submit" class="btn btn-primary">搜索</button>
+        </form>
+      </div>
+      <div class="header-actions">
+        <a href="cart.html" class="cart-link" title="购物车">🛒<span class="cart-badge" id="cartBadge" hidden>0</span></a>
+        <div id="authArea"></div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+
+      <!-- ============ Hero 横幅 ============ -->
+      <section class="hero-banner">
+        <div>
+          <h1>遇见好书，遇见更好的自己</h1>
+          <p>汇聚全网优质书店的海量图书资源，涵盖文学、经管、科技、少儿等多个门类，畅享便捷的在线选购与专属促销权益。</p>
+        </div>
+        <div class="hero-art">📚</div>
+      </section>
+
+      <!-- ============ 分类导航 ============ -->
+      <nav class="category-nav" id="categoryNav" aria-label="图书分类导航">
+        <!-- 由 home.js 通过 BookAPI.listCategories() 动态填充 -->
+      </nav>
+
+      <!-- ============ 推荐图书 ============ -->
+      <section>
+        <div class="section-heading">
+          <h2 class="heading-serif">为你推荐</h2>
+          <a href="search.html">查看全部 →</a>
+        </div>
+        <div class="book-grid" id="recommendedGrid">
+          <!-- 由 home.js 通过 BookAPI.recommended() 动态填充，接口预留了推荐算法模块对接位置 -->
+          <div class="skeleton" style="height:280px"></div>
+          <div class="skeleton" style="height:280px"></div>
+          <div class="skeleton" style="height:280px"></div>
+          <div class="skeleton" style="height:280px"></div>
+          <div class="skeleton" style="height:280px"></div>
+          <div class="skeleton" style="height:280px"></div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ============ 页脚 ============ -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <h4>My-eBookStore</h4>
+          <p>专注于为读者提供便捷、优质的在线购书体验的综合性电子商务平台。课程设计项目 · 第 9 组。</p>
+        </div>
+        <div>
+          <h4>购物指南</h4>
+          <ul>
+            <li><a href="register.html">新手注册</a></li>
+            <li><a href="cart.html">购物车</a></li>
+            <li><a href="orders.html">订单查询</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>用户服务</h4>
+          <ul>
+            <li><a href="promotions.html">促销活动</a></li>
+            <li><a href="profile.html">会员中心</a></li>
+            <li><a href="#">帮助与反馈</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>商家合作</h4>
+          <ul>
+            <li><a href="register.html">书店入驻</a></li>
+            <li><a href="admin/dashboard.html">商家后台</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">© 2026 My-eBookStore 网上书店系统 · 课程设计项目 9 组</div>
+    </div>
+  </footer>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/home.js"></script>
+</body>
+</html>

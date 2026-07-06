@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>图书管理 - My-eBookStore 后台管理</title>
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/admin.css" />
+</head>
+<body class="admin-body">
+
+  <div class="admin-shell">
+    <aside class="admin-sidebar" id="adminSidebar">
+      <div class="admin-brand"><span class="brand-mark">书</span>后台管理</div>
+      <div class="admin-role-tag" id="adminRoleTag">当前角色<span class="role-name">-</span></div>
+      <nav class="admin-menu">
+        <div class="menu-group-title">概览</div>
+        <a href="dashboard.html" data-nav="dashboard"><span class="menu-icon">📊</span>数据总览</a>
+        <div class="menu-group-title">经营管理</div>
+        <a href="books.html" data-nav="books"><span class="menu-icon">📚</span>图书管理</a>
+        <a href="orders.html" data-nav="orders"><span class="menu-icon">🧾</span>订单管理</a>
+        <a href="users.html" data-nav="users"><span class="menu-icon">👥</span>用户管理</a>
+        <a href="stores.html" data-nav="stores" data-role-only="platform_admin"><span class="menu-icon">🏬</span>店铺管理</a>
+        <a href="promotions.html" data-nav="promotions"><span class="menu-icon">🎁</span>促销活动管理</a>
+        <a href="statistics.html" data-nav="statistics"><span class="menu-icon">📈</span>数据统计与分析</a>
+      </nav>
+      <div class="admin-sidebar-footer">
+        <button type="button" id="adminLogoutBtn">⏻ 退出登录</button>
+      </div>
+    </aside>
+
+    <div class="admin-main">
+      <header class="admin-topbar">
+        <span class="page-title">图书管理</span>
+        <div class="admin-topbar-actions">
+          <a href="../index.html" class="btn-text" target="_blank">查看前台 →</a>
+          <span id="adminTopUser">-</span>
+        </div>
+      </header>
+
+      <div class="admin-content">
+        <div class="card">
+          <div class="card-body">
+            <div class="toolbar">
+              <div class="toolbar-filters">
+                <input type="text" id="bookSearchInput" class="form-control" placeholder="搜索书名 / 作者 / ISBN" style="min-width:260px" />
+              </div>
+              <button type="button" class="btn btn-primary" id="addBookBtn">＋ 新增图书</button>
+            </div>
+
+            <div class="data-table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>图书信息</th><th>作者</th><th>所属店铺</th><th>分类</th>
+                    <th>价格</th><th>库存</th><th>销量</th><th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="booksTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新增/编辑图书 模态框 -->
+  <div class="modal-mask" id="bookModal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h3 id="bookModalTitle">新增图书</h3>
+        <button type="button" class="modal-close" onclick="closeModal('bookModal')">×</button>
+      </div>
+      <form id="bookForm">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">图书名称<span class="required">*</span></label>
+              <input type="text" name="bookName" class="form-control" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">作者<span class="required">*</span></label>
+              <input type="text" name="author" class="form-control" required />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">出版社</label>
+              <input type="text" name="publisher" class="form-control" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">ISBN</label>
+              <input type="text" name="isbn" class="form-control" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">图书分类<span class="required">*</span></label>
+              <select name="categoryId" class="form-control" required></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">价格（元）<span class="required">*</span></label>
+              <input type="number" name="price" step="0.01" min="0" class="form-control" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">库存<span class="required">*</span></label>
+              <input type="number" name="stock" min="0" class="form-control" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">图书简介</label>
+            <textarea name="description" class="form-control"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('bookModal')">取消</button>
+          <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="../js/mock-data.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/common.js"></script>
+  <script src="../js/admin/common.js"></script>
+  <script src="../js/admin/books.js"></script>
+</body>
+</html>

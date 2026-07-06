@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>个人中心 - My-eBookStore</title>
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="brand"><span class="brand-mark">书</span>My-eBookStore</a>
+      <nav class="main-nav">
+        <a href="index.html">首页</a>
+        <a href="search.html">全部图书</a>
+        <a href="promotions.html">促销活动</a>
+      </nav>
+      <div class="header-actions" style="margin-left:auto">
+        <a href="cart.html" class="cart-link">🛒<span class="cart-badge" id="cartBadge" hidden>0</span></a>
+        <div id="authArea"></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container page-section">
+    <div class="account-layout">
+      <aside class="account-side" id="accountSidebar">
+        <div class="card account-card">
+          <div class="avatar-lg" id="accountAvatar">U</div>
+          <div style="font-weight:700" id="accountNickname">-</div>
+          <span class="level-tag" id="accountLevel">Lv.1</span>
+        </div>
+        <nav class="account-nav card mt-4">
+          <a href="profile.html" data-nav="profile">👤 我的资料</a>
+          <a href="orders.html" data-nav="orders">🧾 我的订单</a>
+          <a href="promotions.html" data-nav="promotions">🎁 促销活动</a>
+          <a href="cart.html" data-nav="cart">🛒 购物车</a>
+        </nav>
+      </aside>
+
+      <section>
+        <h1 class="heading-serif mb-4">我的资料</h1>
+
+        <div class="stat-grid">
+          <div class="card stat-card">
+            <div class="stat-value" id="statLevel">Lv.1</div>
+            <div class="stat-label">会员等级</div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-value" id="statPoints">0</div>
+            <div class="stat-label">可用积分</div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-value" id="statCheckinDays">0</div>
+            <div class="stat-label">连续签到天数</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <h3 class="mb-4" style="font-size:15px">基本信息</h3>
+            <form id="profileForm">
+              <div class="form-group">
+                <label class="form-label">昵称</label>
+                <input type="text" name="nickname" class="form-control" />
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">手机号</label>
+                  <input type="tel" name="phone" class="form-control" placeholder="选填" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">邮箱</label>
+                  <input type="email" name="email" class="form-control" placeholder="选填" />
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary">保存修改</button>
+            </form>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/profile.js"></script>
+</body>
+</html>

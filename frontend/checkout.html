@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>确认订单 - My-eBookStore</title>
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="brand"><span class="brand-mark">书</span>My-eBookStore</a>
+      <div class="header-actions" style="margin-left:auto">
+        <div id="authArea"></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container page-section">
+    <div class="steps-bar">
+      <div class="step-item done"><span class="step-num">1</span>购物车</div>
+      <div class="step-item active"><span class="step-num">2</span>确认订单</div>
+      <div class="step-item"><span class="step-num">3</span>支付</div>
+      <div class="step-item"><span class="step-num">4</span>完成</div>
+    </div>
+
+    <div class="checkout-layout">
+      <div>
+        <div class="card mb-4">
+          <div class="card-body">
+            <h3 class="mb-4" style="font-size:15px">收货信息</h3>
+            <div class="address-card">
+              <div>
+                <div style="font-weight:600">周同学 &nbsp;138****8888</div>
+                <div class="text-muted mt-2" style="font-size:13px">江苏省南京市栖霞区仙林大道 163 号 · 默认地址</div>
+              </div>
+              <button type="button" class="btn-text">更换地址</button>
+            </div>
+            <p class="form-hint">* 收货地址管理功能由地址簿接口提供，此处为演示占位数据。</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <h3 class="mb-4" style="font-size:15px">商品清单</h3>
+            <div id="checkoutItemList"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="position:sticky; top:calc(var(--header-height) + 16px)">
+        <div class="card-body">
+          <h3 class="mb-4" style="font-size:15px">优惠与结算</h3>
+          <div class="coupon-select" id="couponSelect">
+            <span id="couponLabel">选择可用代金券</span>
+            <span>›</span>
+          </div>
+          <div class="summary-line"><span>商品总额</span><span id="summarySubtotal">¥0.00</span></div>
+          <div class="summary-line"><span>优惠金额</span><span id="summaryDiscount">- ¥0.00</span></div>
+          <div class="summary-line total"><span>应付总额</span><span class="amount" id="summaryTotal">¥0.00</span></div>
+          <button type="button" class="btn btn-primary btn-block mt-4" id="submitOrderBtn">提交订单</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 代金券选择模态框 -->
+  <div class="modal-mask" id="couponModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>选择代金券</h3>
+        <button type="button" class="modal-close" onclick="closeModal('couponModal')">×</button>
+      </div>
+      <div class="modal-body" id="couponList"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="confirmCouponBtn">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/checkout.js"></script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>促销活动管理 - My-eBookStore 后台管理</title>
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/admin.css" />
+</head>
+<body class="admin-body">
+
+  <div class="admin-shell">
+    <aside class="admin-sidebar" id="adminSidebar">
+      <div class="admin-brand"><span class="brand-mark">书</span>后台管理</div>
+      <div class="admin-role-tag" id="adminRoleTag">当前角色<span class="role-name">-</span></div>
+      <nav class="admin-menu">
+        <div class="menu-group-title">概览</div>
+        <a href="dashboard.html" data-nav="dashboard"><span class="menu-icon">📊</span>数据总览</a>
+        <div class="menu-group-title">经营管理</div>
+        <a href="books.html" data-nav="books"><span class="menu-icon">📚</span>图书管理</a>
+        <a href="orders.html" data-nav="orders"><span class="menu-icon">🧾</span>订单管理</a>
+        <a href="users.html" data-nav="users"><span class="menu-icon">👥</span>用户管理</a>
+        <a href="stores.html" data-nav="stores" data-role-only="platform_admin"><span class="menu-icon">🏬</span>店铺管理</a>
+        <a href="promotions.html" data-nav="promotions"><span class="menu-icon">🎁</span>促销活动管理</a>
+        <a href="statistics.html" data-nav="statistics"><span class="menu-icon">📈</span>数据统计与分析</a>
+      </nav>
+      <div class="admin-sidebar-footer">
+        <button type="button" id="adminLogoutBtn">⏻ 退出登录</button>
+      </div>
+    </aside>
+
+    <div class="admin-main">
+      <header class="admin-topbar">
+        <span class="page-title">促销活动管理</span>
+        <div class="admin-topbar-actions">
+          <a href="../index.html" class="btn-text" target="_blank">查看前台 →</a>
+          <span id="adminTopUser">-</span>
+        </div>
+      </header>
+
+      <div class="admin-content">
+        <div class="card">
+          <div class="card-body">
+            <div class="admin-tabs">
+              <button type="button" class="active" data-panel="panelActivityList">活动列表</button>
+              <button type="button" data-panel="panelPlatformCoupon" data-role-only="platform_admin">平台代金券设置</button>
+              <button type="button" data-panel="panelRewards" data-role-only="platform_admin">积分兑换奖品</button>
+            </div>
+
+            <div id="panelActivityList" class="promo-admin-panel">
+              <div class="toolbar">
+                <span class="text-muted" style="font-size:13px">书店管理员可设置是否参与活动及参与书目/店铺券；后台管理员可新增或编辑活动。</span>
+                <button type="button" class="btn btn-primary" id="addActivityBtn" data-role-only="platform_admin">＋ 新增活动</button>
+              </div>
+              <div id="adminActivityList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px"></div>
+            </div>
+
+            <div id="panelPlatformCoupon" class="promo-admin-panel hidden" data-role-only="platform_admin">
+              <form id="platformCouponForm" style="max-width:420px">
+                <div class="form-group">
+                  <label class="form-label">代金券名称</label>
+                  <input type="text" name="couponName" class="form-control" placeholder="如：新人无门槛券" required />
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">优惠金额（元）</label>
+                    <input type="number" name="amount" class="form-control" min="0" step="0.01" required />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">使用门槛（元）</label>
+                    <input type="number" name="minAmount" class="form-control" min="0" step="0.01" required />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">发放数量</label>
+                  <input type="number" name="quantity" class="form-control" min="1" required />
+                </div>
+                <button type="submit" class="btn btn-primary">保存设置</button>
+              </form>
+            </div>
+
+            <div id="panelRewards" class="promo-admin-panel hidden" data-role-only="platform_admin">
+              <div class="toolbar">
+                <span></span>
+                <button type="button" class="btn btn-primary" id="addRewardBtn">＋ 新增奖品</button>
+              </div>
+              <div class="data-table-wrap">
+                <table class="data-table">
+                  <thead><tr><th>奖品名称</th><th>类型</th><th>所需积分</th><th>所需等级</th><th>库存</th><th>操作</th></tr></thead>
+                  <tbody id="rewardsTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 活动新增/编辑 -->
+  <div class="modal-mask" id="activityModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="activityModalTitle">新增活动</h3>
+        <button type="button" class="modal-close" onclick="closeModal('activityModal')">×</button>
+      </div>
+      <form id="activityForm">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">活动名称</label>
+            <input type="text" name="activityName" class="form-control" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">活动类型</label>
+            <select name="activityType" class="form-control" required>
+              <option value="checkin">签到类</option>
+              <option value="quiz">答题/小游戏类</option>
+              <option value="discount">满减/折扣类</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">活动描述</label>
+            <textarea name="description" class="form-control" required></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">开始时间</label>
+              <input type="date" name="startTime" class="form-control" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">结束时间</label>
+              <input type="date" name="endTime" class="form-control" required />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('activityModal')">取消</button>
+          <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 积分奖品新增/编辑 -->
+  <div class="modal-mask" id="rewardModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="rewardModalTitle">新增奖品</h3>
+        <button type="button" class="modal-close" onclick="closeModal('rewardModal')">×</button>
+      </div>
+      <form id="rewardForm">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">奖品名称</label>
+            <input type="text" name="rewardName" class="form-control" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">奖品类型</label>
+            <select name="rewardType" class="form-control" required>
+              <option value="coupon">代金券</option>
+              <option value="physical">实物奖品</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">所需积分</label>
+              <input type="number" name="requiredPoints" class="form-control" min="0" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">所需会员等级</label>
+              <input type="number" name="requiredLevel" class="form-control" min="1" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">库存数量</label>
+            <input type="number" name="stock" class="form-control" min="0" required />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('rewardModal')">取消</button>
+          <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="../js/mock-data.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/common.js"></script>
+  <script src="../js/admin/common.js"></script>
+  <script src="../js/admin/promotions.js"></script>
+</body>
+</html>

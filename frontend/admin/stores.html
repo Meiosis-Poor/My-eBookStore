@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>店铺管理 - My-eBookStore 后台管理</title>
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/admin.css" />
+</head>
+<body class="admin-body">
+
+  <div class="admin-shell">
+    <aside class="admin-sidebar" id="adminSidebar">
+      <div class="admin-brand"><span class="brand-mark">书</span>后台管理</div>
+      <div class="admin-role-tag" id="adminRoleTag">当前角色<span class="role-name">-</span></div>
+      <nav class="admin-menu">
+        <div class="menu-group-title">概览</div>
+        <a href="dashboard.html" data-nav="dashboard"><span class="menu-icon">📊</span>数据总览</a>
+        <div class="menu-group-title">经营管理</div>
+        <a href="books.html" data-nav="books"><span class="menu-icon">📚</span>图书管理</a>
+        <a href="orders.html" data-nav="orders"><span class="menu-icon">🧾</span>订单管理</a>
+        <a href="users.html" data-nav="users"><span class="menu-icon">👥</span>用户管理</a>
+        <a href="stores.html" data-nav="stores" data-role-only="platform_admin"><span class="menu-icon">🏬</span>店铺管理</a>
+        <a href="promotions.html" data-nav="promotions"><span class="menu-icon">🎁</span>促销活动管理</a>
+        <a href="statistics.html" data-nav="statistics"><span class="menu-icon">📈</span>数据统计与分析</a>
+      </nav>
+      <div class="admin-sidebar-footer">
+        <button type="button" id="adminLogoutBtn">⏻ 退出登录</button>
+      </div>
+    </aside>
+
+    <div class="admin-main">
+      <header class="admin-topbar">
+        <span class="page-title">店铺管理</span>
+        <div class="admin-topbar-actions">
+          <a href="../index.html" class="btn-text" target="_blank">查看前台 →</a>
+          <span id="adminTopUser">-</span>
+        </div>
+      </header>
+
+      <div class="admin-content">
+        <div class="card">
+          <div class="card-body">
+            <p class="form-hint mb-4">后台管理员可对全平台入驻店铺进行开放 / 封禁管理，以保障平台诚信与安全运行。</p>
+            <div class="data-table-wrap">
+              <table class="data-table">
+                <thead><tr><th>店铺名称</th><th>入驻时间</th><th>在架图书数</th><th>累计订单数</th><th>状态</th><th>操作</th></tr></thead>
+                <tbody id="storesTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/mock-data.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/common.js"></script>
+  <script src="../js/admin/common.js"></script>
+  <script src="../js/admin/stores.js"></script>
+</body>
+</html>

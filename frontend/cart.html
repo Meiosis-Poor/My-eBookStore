@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>购物车 - My-eBookStore</title>
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="brand"><span class="brand-mark">书</span>My-eBookStore</a>
+      <nav class="main-nav">
+        <a href="index.html">首页</a>
+        <a href="search.html">全部图书</a>
+        <a href="promotions.html">促销活动</a>
+      </nav>
+      <div class="header-actions" style="margin-left:auto">
+        <a href="cart.html" class="cart-link active">🛒<span class="cart-badge" id="cartBadge" hidden>0</span></a>
+        <div id="authArea"></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container page-section">
+    <h1 class="heading-serif mb-4">我的购物车</h1>
+
+    <div class="flex items-center gap-3 mb-4" style="font-size:13px">
+      <label class="checkbox-line"><input type="checkbox" id="selectAllCheckbox" /> 全选</label>
+    </div>
+
+    <div id="cartList"></div>
+
+    <div class="empty-state hidden" id="cartEmptyState">
+      <div class="empty-icon">🛒</div>
+      <p>购物车中暂无商品！</p>
+      <a href="search.html" class="btn btn-primary mt-4">去逛逛</a>
+    </div>
+
+    <div class="cart-summary-bar">
+      <div>已选择 <b id="selectedCount">0</b> 件商品</div>
+      <div class="flex items-center gap-4">
+        <div>合计：<span class="total-amount" id="cartTotalAmount">¥0.00</span></div>
+        <button type="button" class="btn btn-primary" id="goCheckoutBtn" disabled>去结算</button>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-bottom">© 2026 My-eBookStore 网上书店系统 · 课程设计项目 9 组</div>
+  </footer>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/cart.js"></script>
+</body>
+</html>

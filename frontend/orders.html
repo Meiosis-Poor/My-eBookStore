@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>我的订单 - My-eBookStore</title>
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="brand"><span class="brand-mark">书</span>My-eBookStore</a>
+      <nav class="main-nav">
+        <a href="index.html">首页</a>
+        <a href="search.html">全部图书</a>
+        <a href="promotions.html">促销活动</a>
+      </nav>
+      <div class="header-actions" style="margin-left:auto">
+        <a href="cart.html" class="cart-link">🛒<span class="cart-badge" id="cartBadge" hidden>0</span></a>
+        <div id="authArea"></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container page-section">
+    <div class="account-layout">
+      <aside class="account-side" id="accountSidebar">
+        <div class="card account-card">
+          <div class="avatar-lg" id="accountAvatar">U</div>
+          <div style="font-weight:700" id="accountNickname">-</div>
+          <span class="level-tag" id="accountLevel">Lv.1</span>
+        </div>
+        <nav class="account-nav card mt-4">
+          <a href="profile.html" data-nav="profile">👤 我的资料</a>
+          <a href="orders.html" data-nav="orders">🧾 我的订单</a>
+          <a href="promotions.html" data-nav="promotions">🎁 促销活动</a>
+          <a href="cart.html" data-nav="cart">🛒 购物车</a>
+        </nav>
+      </aside>
+
+      <section>
+        <h1 class="heading-serif mb-4">我的订单</h1>
+        <div class="order-status-tabs" id="orderStatusTabs"></div>
+        <div id="orderList"></div>
+        <div class="empty-state hidden" id="orderEmptyState">
+          <div class="empty-icon">🧾</div>
+          <p>暂无订单记录！</p>
+          <a href="search.html" class="btn btn-primary mt-4">去购物</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/orders.js"></script>
+</body>
+</html>

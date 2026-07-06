@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>支付结果 - My-eBookStore</title>
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="brand"><span class="brand-mark">书</span>My-eBookStore</a>
+      <div class="header-actions" style="margin-left:auto">
+        <div id="authArea"></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container page-section" style="max-width:640px">
+    <div class="steps-bar">
+      <div class="step-item done"><span class="step-num">1</span>购物车</div>
+      <div class="step-item done"><span class="step-num">2</span>确认订单</div>
+      <div class="step-item done"><span class="step-num">3</span>支付</div>
+      <div class="step-item active"><span class="step-num">4</span>完成</div>
+    </div>
+
+    <div class="card">
+      <div class="result-panel" id="resultPanel">
+        <div class="result-icon">⏳</div>
+        <h2>正在确认支付结果...</h2>
+        <p></p>
+        <div class="result-actions"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/payment-result.js"></script>
+</body>
+</html>

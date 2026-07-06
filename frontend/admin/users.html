@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>用户管理 - My-eBookStore 后台管理</title>
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/admin.css" />
+</head>
+<body class="admin-body">
+
+  <div class="admin-shell">
+    <aside class="admin-sidebar" id="adminSidebar">
+      <div class="admin-brand"><span class="brand-mark">书</span>后台管理</div>
+      <div class="admin-role-tag" id="adminRoleTag">当前角色<span class="role-name">-</span></div>
+      <nav class="admin-menu">
+        <div class="menu-group-title">概览</div>
+        <a href="dashboard.html" data-nav="dashboard"><span class="menu-icon">📊</span>数据总览</a>
+        <div class="menu-group-title">经营管理</div>
+        <a href="books.html" data-nav="books"><span class="menu-icon">📚</span>图书管理</a>
+        <a href="orders.html" data-nav="orders"><span class="menu-icon">🧾</span>订单管理</a>
+        <a href="users.html" data-nav="users"><span class="menu-icon">👥</span>用户管理</a>
+        <a href="stores.html" data-nav="stores" data-role-only="platform_admin"><span class="menu-icon">🏬</span>店铺管理</a>
+        <a href="promotions.html" data-nav="promotions"><span class="menu-icon">🎁</span>促销活动管理</a>
+        <a href="statistics.html" data-nav="statistics"><span class="menu-icon">📈</span>数据统计与分析</a>
+      </nav>
+      <div class="admin-sidebar-footer">
+        <button type="button" id="adminLogoutBtn">⏻ 退出登录</button>
+      </div>
+    </aside>
+
+    <div class="admin-main">
+      <header class="admin-topbar">
+        <span class="page-title">用户管理</span>
+        <div class="admin-topbar-actions">
+          <a href="../index.html" class="btn-text" target="_blank">查看前台 →</a>
+          <span id="adminTopUser">-</span>
+        </div>
+      </header>
+
+      <div class="admin-content">
+        <div class="card">
+          <div class="card-body">
+            <p class="form-hint mb-4" data-role-only="seller">
+              提示：书店管理员仅可查看购买过本店图书的用户，若发现恶意差评、恶意仅退款等行为，可将其加入本店黑名单；同一用户被超过 10 家店铺拉黑后，将由平台自动封禁。
+            </p>
+            <p class="form-hint mb-4" data-role-only="platform_admin">
+              提示：后台管理员可对全平台用户账号执行封禁 / 解封操作。
+            </p>
+
+            <div class="toolbar">
+              <div class="toolbar-filters">
+                <input type="text" id="userSearchInput" class="form-control" placeholder="搜索用户名 / 昵称" style="min-width:260px" />
+              </div>
+            </div>
+
+            <div class="data-table-wrap">
+              <table class="data-table">
+                <thead><tr><th>用户</th><th>注册时间</th><th>状态</th><th>操作</th></tr></thead>
+                <tbody id="usersTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-mask" id="blacklistModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>加入本店黑名单</h3>
+        <button type="button" class="modal-close" onclick="closeModal('blacklistModal')">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">拉黑原因</label>
+          <textarea id="blacklistReason" class="form-control" placeholder="如：恶意差评 / 恶意仅退款"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal('blacklistModal')">取消</button>
+        <button type="button" class="btn btn-danger" id="confirmBlacklistBtn">确认拉黑</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/mock-data.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/common.js"></script>
+  <script src="../js/admin/common.js"></script>
+  <script src="../js/admin/users.js"></script>
+</body>
+</html>

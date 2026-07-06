@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>促销活动 - My-eBookStore</title>
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="brand"><span class="brand-mark">书</span>My-eBookStore</a>
+      <nav class="main-nav">
+        <a href="index.html">首页</a>
+        <a href="search.html">全部图书</a>
+        <a href="promotions.html" class="active">促销活动</a>
+      </nav>
+      <div class="header-actions" style="margin-left:auto">
+        <a href="cart.html" class="cart-link">🛒<span class="cart-badge" id="cartBadge" hidden>0</span></a>
+        <div id="authArea"></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container page-section">
+    <h1 class="heading-serif mb-4">促销活动中心</h1>
+
+    <!-- 签到与等级概览 -->
+    <div class="card checkin-panel">
+      <div>
+        <h3 style="font-size:16px">每日签到</h3>
+        <p class="text-muted mt-2" style="font-size:13px">
+          当前等级 <b id="userLevelText">Lv.1</b> · 可用积分 <b id="userPointsText">0</b>
+        </p>
+        <div class="checkin-days mt-4" id="checkinDays"></div>
+      </div>
+      <div class="flex-col gap-2">
+        <button type="button" class="btn btn-accent" id="checkinBtn">立即签到</button>
+        <button type="button" class="btn btn-outline hidden" id="weeklyCouponBtn">领取本周代金券</button>
+      </div>
+    </div>
+
+    <!-- Tab 切换 -->
+    <div class="tab-strip">
+      <button type="button" class="active" data-panel="panelActivities">进行中的活动</button>
+      <button type="button" data-panel="panelCoupons">我的代金券</button>
+      <button type="button" data-panel="panelRewards">积分商城</button>
+    </div>
+
+    <div id="panelActivities" class="promo-panel">
+      <div class="book-grid" id="activityList" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))"></div>
+    </div>
+
+    <div id="panelCoupons" class="promo-panel hidden">
+      <div class="flex-col gap-3" id="couponGrid"></div>
+    </div>
+
+    <div id="panelRewards" class="promo-panel hidden">
+      <div class="book-grid" id="rewardGrid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))"></div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-bottom">© 2026 My-eBookStore 网上书店系统 · 课程设计项目 9 组</div>
+  </footer>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/promotions.js"></script>
+</body>
+</html>
