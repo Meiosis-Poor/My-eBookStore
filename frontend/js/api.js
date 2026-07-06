@@ -121,13 +121,18 @@ const AuthAPI = {
       return await request("/auth/login", { method: "POST", body: payload });
     } catch (err) {
       console.warn("[AuthAPI.login] 后端接口未就绪，使用模拟登录结果：", err.message);
+      // 演示环境下，登录的书店管理员统一关联到 MOCK_STORE_PROFILES 中的第一家店铺（storeId 100），
+      // 以便店铺信息设置页、后台图书/统计等页面与客户端 store.html 的数据能对应上；
+      // 真实后端应根据登录账号返回其实际关联的 storeId / storeName。
+      const sellerStore = MOCK_STORE_PROFILES[0];
       return mockDelay({
         token: "mock-token-" + Date.now(),
         user: {
           userId: Date.now(),
           userName: payload.userName,
           nickname: payload.userName,
-          storeName: payload.role === "seller" ? `${payload.userName} 的书店` : undefined,
+          storeId: payload.role === "seller" ? sellerStore.storeId : undefined,
+          storeName: payload.role === "seller" ? sellerStore.storeName : undefined,
           userType: payload.role || "customer",
           level: 3,
           totalPoints: MOCK_CURRENT_USER.totalPoints,
@@ -237,6 +242,73 @@ const BookAPI = {
     } catch (err) {
       console.warn("[BookAPI.similar] 使用模拟数据：", err.message);
       return mockDelay(MOCK_BOOKS.filter((b) => String(b.bookItemId) !== String(bookItemId)).slice(0, 5));
+    }
+  },
+};
+
+/* ============================================================
+ * 2.5 店铺模块  StoreAPI
+ * 场景：图书详情页点击“进入书店” → 查看该书店主页及全部在架图书
+ * ============================================================ */
+const StoreAPI = {
+  /**
+   * 店铺主页信息
+   * 方法：GET 路径：/stores/{storeId}
+   * 响应：{ storeId, storeName, createdTime, bookCount, salesCount }
+   */
+  async detail(storeId) {
+    try {
+      return await request(`/stores/${storeId}`);
+    } catch (err) {
+      console.warn("[StoreAPI.detail] 使用模拟数据：", err.message);
+      const profile =
+        MOCK_STORE_PROFILES.find((s) => String(s.storeId) === String(storeId)) || MOCK_STORE_PROFILES[0];
+      const books = MOCK_BOOKS.filter((b) => String(b.storeId) === String(profile.storeId));
+      return mockDelay({
+        ...profile,
+        bookCount: books.length,
+        salesCount: books.reduce((sum, b) => sum + b.salesCount, 0),
+      });
+    }
+  },
+
+  /**
+   * 店铺内全部在架图书
+   * 方法：GET 路径：/stores/{storeId}/books
+   * Query：{ sort?: "default"|"sales"|"price_asc"|"price_desc", page?, pageSize? }
+   * 响应：{ list: BookItem[], total: number }
+   */
+  async books(storeId, params = {}) {
+    try {
+      const qs = new URLSearchParams(params).toString();
+      return await request(`/stores/${storeId}/books?${qs}`);
+    } catch (err) {
+      console.warn("[StoreAPI.books] 使用模拟数据：", err.message);
+      let list = MOCK_BOOKS.filter((b) => String(b.storeId) === String(storeId));
+      if (params.sort === "sales") list = [...list].sort((a, b) => b.salesCount - a.salesCount);
+      if (params.sort === "price_asc") list = [...list].sort((a, b) => a.price - b.price);
+      if (params.sort === "price_desc") list = [...list].sort((a, b) => b.price - a.price);
+      return mockDelay({ list, total: list.length });
+    }
+  },
+
+  /**
+   * 书店管理员维护本店基本信息（店铺名称）
+   * 方法：PUT 路径：/stores/{storeId}
+   * 请求体：{ storeName?: string }
+   * 场景：后台“店铺信息设置”页保存
+   */
+  async updateProfile(storeId, payload) {
+    try {
+      return await request(`/stores/${storeId}`, { method: "PUT", body: payload });
+    } catch (err) {
+      console.warn("[StoreAPI.updateProfile] 使用模拟数据更新：", err.message);
+      const profile = MOCK_STORE_PROFILES.find((s) => String(s.storeId) === String(storeId));
+      if (profile) {
+        Object.assign(profile, payload);
+        persistMockStoreProfiles();
+      }
+      return mockDelay({ ok: true });
     }
   },
 };

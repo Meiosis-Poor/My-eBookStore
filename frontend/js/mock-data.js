@@ -60,6 +60,36 @@ function buildMockBooks() {
 
 const MOCK_BOOKS = buildMockBooks();
 
+/**
+ * 店铺主页展示信息，storeId 与 MOCK_BOOKS 中 book.storeId 对应，供 StoreAPI 使用。
+ * 通过 localStorage 持久化：书店管理员在“店铺信息设置”页保存后，即使跳转到其他
+ * 页面（整页加载，mock-data.js 会重新执行）也能读到修改后的内容，行为更接近真实后端。
+ */
+const STORE_PROFILES_STORAGE_KEY = "ebs_mock_store_profiles";
+const DEFAULT_STORE_PROFILES = [
+  { storeId: 100, storeName: "博文书店", createdTime: "2025-09-01" },
+  { storeId: 101, storeName: "启明书城", createdTime: "2025-10-11" },
+  { storeId: 102, storeName: "墨香书屋", createdTime: "2025-11-02" },
+  { storeId: 103, storeName: "远方书局", createdTime: "2025-08-15" },
+];
+
+function loadMockStoreProfiles() {
+  try {
+    const raw = localStorage.getItem(STORE_PROFILES_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (err) {
+    /* 忽略解析失败，回退到默认值 */
+  }
+  return DEFAULT_STORE_PROFILES.map((s) => ({ ...s }));
+}
+
+const MOCK_STORE_PROFILES = loadMockStoreProfiles();
+
+/** 供 api.js 在店铺信息保存成功后调用，把最新数据写回 localStorage */
+function persistMockStoreProfiles() {
+  localStorage.setItem(STORE_PROFILES_STORAGE_KEY, JSON.stringify(MOCK_STORE_PROFILES));
+}
+
 const MOCK_COUPONS = [
   { couponId: 1, couponName: "新人无门槛券", couponType: "platform", amount: 5, minAmount: 0, validEnd: "2026-08-31" },
   { couponId: 2, couponName: "满99减15", couponType: "platform", amount: 15, minAmount: 99, validEnd: "2026-08-15" },

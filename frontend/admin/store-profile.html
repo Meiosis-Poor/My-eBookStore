@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>数据统计与分析 - My-eBookStore 后台管理</title>
+  <title>店铺信息设置 - My-eBookStore 后台管理</title>
   <link rel="stylesheet" href="../css/base.css" />
   <link rel="stylesheet" href="../css/admin.css" />
 </head>
@@ -32,7 +32,7 @@
 
     <div class="admin-main">
       <header class="admin-topbar">
-        <span class="page-title">数据统计与分析</span>
+        <span class="page-title">店铺信息设置</span>
         <div class="admin-topbar-actions">
           <a href="../index.html" class="btn-text" target="_blank">查看前台 →</a>
           <span id="adminTopUser">-</span>
@@ -40,41 +40,36 @@
       </header>
 
       <div class="admin-content">
-        <div class="admin-tabs">
-          <button type="button" class="active" data-range="7d">近 7 天</button>
-          <button type="button" data-range="30d">近 30 天</button>
-          <button type="button" data-range="90d">近 90 天</button>
-        </div>
-
-        <div class="kpi-grid">
-          <div class="card kpi-card">
-            <div class="kpi-value" id="statTodaySales">¥0.00</div>
-            <div class="kpi-label">区间销售额</div>
+        <div class="stat-grid">
+          <div class="card stat-card">
+            <div class="stat-value" id="storeBookCount">-</div>
+            <div class="stat-label">在架图书数</div>
           </div>
-          <div class="card kpi-card">
-            <div class="kpi-value" id="statTodayOrders">0</div>
-            <div class="kpi-label">区间订单数</div>
+          <div class="card stat-card">
+            <div class="stat-value" id="storeSalesCount">-</div>
+            <div class="stat-label">累计销量</div>
           </div>
-          <div class="card kpi-card">
-            <div class="kpi-value" id="statTotalUsers">0</div>
-            <div class="kpi-label">活跃用户数</div>
+          <div class="card stat-card">
+            <div class="stat-value" id="storeCreatedTime">-</div>
+            <div class="stat-label">入驻时间</div>
           </div>
         </div>
 
-        <div class="panel-grid">
-          <div class="card">
-            <div class="panel-header"><h3>销售额趋势</h3></div>
-            <div class="chart-box"><div class="bar-chart" id="trendChart"></div></div>
-          </div>
-          <div class="card">
-            <div class="panel-header"><h3>热门图书排行</h3></div>
-            <div class="chart-box"><div class="rank-list" id="hotBookList"></div></div>
-          </div>
-        </div>
+        <div class="card">
+          <div class="card-body">
+            <div class="toolbar">
+              <span class="text-muted" style="font-size:13px">此处填写的店铺名称，将展示在顾客浏览图书详情页“进入书店”后看到的店铺主页上。</span>
+              <a href="#" id="previewStoreLink" class="btn btn-outline btn-sm" target="_blank">预览店铺主页 →</a>
+            </div>
 
-        <div class="card" data-role-only="platform_admin">
-          <div class="panel-header"><h3>风控分析：疑似异常刷单店铺</h3></div>
-          <div class="card-body" id="riskStoreList"></div>
+            <form id="storeProfileForm" style="max-width:560px">
+              <div class="form-group">
+                <label class="form-label">店铺名称<span class="required">*</span></label>
+                <input type="text" name="storeName" class="form-control" required />
+              </div>
+              <button type="submit" class="btn btn-primary">保存设置</button>
+            </form>
+          </div>
         </div>
       </div>
     </div>
@@ -84,6 +79,6 @@
   <script src="../js/api.js"></script>
   <script src="../js/common.js"></script>
   <script src="../js/admin/common.js"></script>
-  <script src="../js/admin/statistics.js"></script>
+  <script src="../js/admin/store-profile.js"></script>
 </body>
 </html>
