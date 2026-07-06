@@ -254,7 +254,7 @@ const StoreAPI = {
   /**
    * 店铺主页信息
    * 方法：GET 路径：/stores/{storeId}
-   * 响应：{ storeId, storeName, createdTime, bookCount, salesCount }
+   * 响应：{ storeId, storeName, description, createdTime, bookCount, salesCount }
    */
   async detail(storeId) {
     try {
@@ -293,9 +293,9 @@ const StoreAPI = {
   },
 
   /**
-   * 书店管理员维护本店基本信息（店铺名称）
+   * 书店管理员维护本店基本信息（店铺名称 / 简介）
    * 方法：PUT 路径：/stores/{storeId}
-   * 请求体：{ storeName?: string }
+   * 请求体：{ storeName?: string, description?: string }
    * 场景：后台“店铺信息设置”页保存
    */
   async updateProfile(storeId, payload) {

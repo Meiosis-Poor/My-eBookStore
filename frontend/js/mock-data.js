@@ -67,10 +67,10 @@ const MOCK_BOOKS = buildMockBooks();
  */
 const STORE_PROFILES_STORAGE_KEY = "ebs_mock_store_profiles";
 const DEFAULT_STORE_PROFILES = [
-  { storeId: 100, storeName: "博文书店", createdTime: "2025-09-01" },
-  { storeId: 101, storeName: "启明书城", createdTime: "2025-10-11" },
-  { storeId: 102, storeName: "墨香书屋", createdTime: "2025-11-02" },
-  { storeId: 103, storeName: "远方书局", createdTime: "2025-08-15" },
+  { storeId: 100, storeName: "博文书店", description: "深耕文学与人文社科领域十余年，甄选经典与畅销好书。", createdTime: "2025-09-01" },
+  { storeId: 101, storeName: "启明书城", description: "专注科技与计算机类图书，紧跟技术前沿与经典教材。", createdTime: "2025-10-11" },
+  { storeId: 102, storeName: "墨香书屋", description: "主打设计、艺术与生活方式类图书，精致小而美。", createdTime: "2025-11-02" },
+  { storeId: 103, storeName: "远方书局", description: "覆盖少儿教育与历史人文，陪伴各年龄段读者成长。", createdTime: "2025-08-15" },
 ];
 
 function loadMockStoreProfiles() {

@@ -17,6 +17,7 @@ async function loadStoreProfile() {
   document.title = `${store.storeName} - My-eBookStore`;
   document.getElementById("breadcrumbStoreName").textContent = store.storeName;
   document.getElementById("storeName").textContent = store.storeName;
+  document.getElementById("storeDescription").textContent = store.description || "";
   document.getElementById("storeCreatedTime").textContent = store.createdTime || "-";
   document.getElementById("storeBookCount").textContent = store.bookCount;
   document.getElementById("storeSalesCount").textContent = store.salesCount;
