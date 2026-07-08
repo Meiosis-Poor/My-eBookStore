@@ -48,15 +48,30 @@
         <!-- 由 home.js 通过 BookAPI.listCategories() 动态填充 -->
       </nav>
 
-      <!-- ============ 推荐图书 ============ -->
+      <!-- ============ 猜你喜欢 ============ -->
       <section>
         <div class="section-heading">
-          <h2 class="heading-serif">为你推荐</h2>
+          <h2 class="heading-serif">猜你喜欢</h2>
           <a href="search.html">查看全部 →</a>
         </div>
         <div class="book-grid" id="recommendedGrid">
           <!-- 由 home.js 通过 BookAPI.recommended() 动态填充，接口预留了推荐算法模块对接位置 -->
           <div class="skeleton" style="height:280px"></div>
+          <div class="skeleton" style="height:280px"></div>
+          <div class="skeleton" style="height:280px"></div>
+          <div class="skeleton" style="height:280px"></div>
+          <div class="skeleton" style="height:280px"></div>
+          <div class="skeleton" style="height:280px"></div>
+        </div>
+      </section>
+
+      <!-- ============ 热销图书 ============ -->
+      <section>
+        <div class="section-heading">
+          <h2 class="heading-serif">热销图书</h2>
+          <a href="search.html?sort=sales">查看全部 →</a>
+        </div>
+        <div class="book-grid" id="hotBookGrid">
           <div class="skeleton" style="height:280px"></div>
           <div class="skeleton" style="height:280px"></div>
           <div class="skeleton" style="height:280px"></div>
