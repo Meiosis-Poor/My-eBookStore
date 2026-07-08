@@ -12,7 +12,8 @@ function renderDetail(book) {
   document.getElementById("bookCoverIcon").textContent = book.cover || "📘";
   document.getElementById("breadcrumbTitle").textContent = book.bookName;
   document.getElementById("bookTitle").textContent = book.bookName;
-  document.getElementById("bookStoreLink").textContent = book.storeName;
+  document.getElementById("bookStoreName").textContent = book.storeName;
+  document.getElementById("enterStoreLink").href = `store.html?id=${book.storeId}`;
   document.getElementById("bookAuthor").textContent = book.author;
   document.getElementById("bookPublisher").textContent = book.publisher || "-";
   document.getElementById("bookIsbn").textContent = book.isbn || "-";

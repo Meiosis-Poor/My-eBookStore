@@ -60,6 +60,64 @@ function buildMockBooks() {
 
 const MOCK_BOOKS = buildMockBooks();
 
+/**
+ * 店铺主页展示信息，storeId 与 MOCK_BOOKS 中 book.storeId 对应，供 StoreAPI 使用。
+ * 通过 localStorage 持久化：书店管理员在“店铺信息设置”页保存后，即使跳转到其他
+ * 页面（整页加载，mock-data.js 会重新执行）也能读到修改后的内容，行为更接近真实后端。
+ */
+const STORE_PROFILES_STORAGE_KEY = "ebs_mock_store_profiles";
+const DEFAULT_STORE_PROFILES = [
+  { storeId: 100, storeName: "博文书店", description: "深耕文学与人文社科领域十余年，甄选经典与畅销好书。", createdTime: "2025-09-01" },
+  { storeId: 101, storeName: "启明书城", description: "专注科技与计算机类图书，紧跟技术前沿与经典教材。", createdTime: "2025-10-11" },
+  { storeId: 102, storeName: "墨香书屋", description: "主打设计、艺术与生活方式类图书，精致小而美。", createdTime: "2025-11-02" },
+  { storeId: 103, storeName: "远方书局", description: "覆盖少儿教育与历史人文，陪伴各年龄段读者成长。", createdTime: "2025-08-15" },
+];
+
+function loadMockStoreProfiles() {
+  try {
+    const raw = localStorage.getItem(STORE_PROFILES_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (err) {
+    /* 忽略解析失败，回退到默认值 */
+  }
+  return DEFAULT_STORE_PROFILES.map((s) => ({ ...s }));
+}
+
+const MOCK_STORE_PROFILES = loadMockStoreProfiles();
+
+/** 供 api.js 在店铺信息保存成功后调用，把最新数据写回 localStorage */
+function persistMockStoreProfiles() {
+  localStorage.setItem(STORE_PROFILES_STORAGE_KEY, JSON.stringify(MOCK_STORE_PROFILES));
+}
+
+/**
+ * 用户收货地址簿，供 AddressAPI 及确认订单页“更换地址”功能使用。
+ * 通过 localStorage 持久化：新增/编辑/删除地址后，即使跳转到其他页面
+ * （整页加载，mock-data.js 会重新执行）也能读到最新数据。
+ */
+const ADDRESSES_STORAGE_KEY = "ebs_mock_addresses";
+const DEFAULT_ADDRESSES = [
+  { addressId: 1, recipientName: "周同学", phone: "13800008888", addressDetail: "江苏省南京市栖霞区仙林大道163号", isDefault: true },
+  { addressId: 2, recipientName: "周同学（公司）", phone: "13900001234", addressDetail: "江苏省南京市建邺区庐山路88号", isDefault: false },
+];
+
+function loadMockAddresses() {
+  try {
+    const raw = localStorage.getItem(ADDRESSES_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (err) {
+    /* 忽略解析失败，回退到默认值 */
+  }
+  return DEFAULT_ADDRESSES.map((a) => ({ ...a }));
+}
+
+const MOCK_ADDRESSES = loadMockAddresses();
+
+/** 供 api.js 在地址新增/编辑/删除成功后调用，把最新数据写回 localStorage */
+function persistMockAddresses() {
+  localStorage.setItem(ADDRESSES_STORAGE_KEY, JSON.stringify(MOCK_ADDRESSES));
+}
+
 const MOCK_COUPONS = [
   { couponId: 1, couponName: "新人无门槛券", couponType: "platform", amount: 5, minAmount: 0, validEnd: "2026-08-31" },
   { couponId: 2, couponName: "满99减15", couponType: "platform", amount: 15, minAmount: 99, validEnd: "2026-08-15" },
@@ -130,6 +188,10 @@ function buildMockOrders() {
       discountAmount: 5,
       actualAmount: Number((totalAmount - 5).toFixed(2)),
       createdTime: `2026-07-0${(idx % 5) + 1} 14:${20 + idx}:00`,
+      // 收货信息为下单时的快照，与地址簿解耦，故此处使用默认地址演示，与 checkout.js 中的行为保持一致
+      receiverName: MOCK_ADDRESSES[0].recipientName,
+      receiverPhone: MOCK_ADDRESSES[0].phone,
+      receiverAddress: MOCK_ADDRESSES[0].addressDetail,
       items,
     };
   });

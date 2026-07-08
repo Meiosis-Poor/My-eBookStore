@@ -16,6 +16,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("orderDiscount").textContent = `- ${formatPrice(order.discountAmount)}`;
   document.getElementById("orderActual").textContent = formatPrice(order.actualAmount);
 
+  document.getElementById("orderReceiverName").textContent = order.receiverName || "-";
+  document.getElementById("orderReceiverPhone").textContent = order.receiverPhone ? maskPhone(order.receiverPhone) : "";
+  document.getElementById("orderReceiverAddress").textContent = order.receiverAddress || "-";
+
   document.getElementById("orderItemList").innerHTML = order.items
     .map(
       (it) => `
