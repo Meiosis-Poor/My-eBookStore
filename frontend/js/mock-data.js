@@ -90,6 +90,34 @@ function persistMockStoreProfiles() {
   localStorage.setItem(STORE_PROFILES_STORAGE_KEY, JSON.stringify(MOCK_STORE_PROFILES));
 }
 
+/**
+ * 用户收货地址簿，供 AddressAPI 及确认订单页“更换地址”功能使用。
+ * 通过 localStorage 持久化：新增/编辑/删除地址后，即使跳转到其他页面
+ * （整页加载，mock-data.js 会重新执行）也能读到最新数据。
+ */
+const ADDRESSES_STORAGE_KEY = "ebs_mock_addresses";
+const DEFAULT_ADDRESSES = [
+  { addressId: 1, recipientName: "周同学", phone: "13800008888", addressDetail: "江苏省南京市栖霞区仙林大道163号", isDefault: true },
+  { addressId: 2, recipientName: "周同学（公司）", phone: "13900001234", addressDetail: "江苏省南京市建邺区庐山路88号", isDefault: false },
+];
+
+function loadMockAddresses() {
+  try {
+    const raw = localStorage.getItem(ADDRESSES_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (err) {
+    /* 忽略解析失败，回退到默认值 */
+  }
+  return DEFAULT_ADDRESSES.map((a) => ({ ...a }));
+}
+
+const MOCK_ADDRESSES = loadMockAddresses();
+
+/** 供 api.js 在地址新增/编辑/删除成功后调用，把最新数据写回 localStorage */
+function persistMockAddresses() {
+  localStorage.setItem(ADDRESSES_STORAGE_KEY, JSON.stringify(MOCK_ADDRESSES));
+}
+
 const MOCK_COUPONS = [
   { couponId: 1, couponName: "新人无门槛券", couponType: "platform", amount: 5, minAmount: 0, validEnd: "2026-08-31" },
   { couponId: 2, couponName: "满99减15", couponType: "platform", amount: 15, minAmount: 99, validEnd: "2026-08-15" },
@@ -160,6 +188,10 @@ function buildMockOrders() {
       discountAmount: 5,
       actualAmount: Number((totalAmount - 5).toFixed(2)),
       createdTime: `2026-07-0${(idx % 5) + 1} 14:${20 + idx}:00`,
+      // 收货信息为下单时的快照，与地址簿解耦，故此处使用默认地址演示，与 checkout.js 中的行为保持一致
+      receiverName: MOCK_ADDRESSES[0].recipientName,
+      receiverPhone: MOCK_ADDRESSES[0].phone,
+      receiverAddress: MOCK_ADDRESSES[0].addressDetail,
       items,
     };
   });

@@ -64,6 +64,10 @@ function debounce(fn, wait = 300) {
 function qs(name) {
   return new URLSearchParams(window.location.search).get(name);
 }
+function maskPhone(phone) {
+  const str = String(phone || "");
+  return str.length === 11 ? `${str.slice(0, 3)}****${str.slice(7)}` : str;
+}
 
 /* ---------- 登录态校验 ---------- */
 /** 需要登录才能访问的操作：未登录时提示并跳转登录页，登录后可通过 redirect 参数回跳 */

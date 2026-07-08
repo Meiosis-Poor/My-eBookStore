@@ -386,13 +386,84 @@ function writeLocalCart(cart) {
 }
 
 /* ============================================================
+ * 3.5 收货地址模块  AddressAPI
+ * 场景：确认订单页“更换地址”弹窗，维护用户的收货地址簿
+ * ============================================================ */
+const AddressAPI = {
+  /** 获取当前用户的收货地址列表 方法：GET 路径：/addresses 响应：Address[]（含 isDefault 标记） */
+  async list() {
+    try {
+      return await request("/addresses");
+    } catch (err) {
+      console.warn("[AddressAPI.list] 使用模拟数据：", err.message);
+      return mockDelay([...MOCK_ADDRESSES]);
+    }
+  },
+
+  /**
+   * 新增收货地址
+   * 方法：POST 路径：/addresses
+   * 请求体：{ recipientName: string, phone: string, addressDetail: string, isDefault?: boolean }
+   * 响应：{ addressId: number }
+   */
+  async create(payload) {
+    try {
+      return await request("/addresses", { method: "POST", body: payload });
+    } catch (err) {
+      console.warn("[AddressAPI.create] 使用模拟数据新增：", err.message);
+      const newAddress = { isDefault: false, ...payload, addressId: Date.now() };
+      if (newAddress.isDefault) MOCK_ADDRESSES.forEach((a) => (a.isDefault = false));
+      MOCK_ADDRESSES.push(newAddress);
+      persistMockAddresses();
+      return mockDelay({ addressId: newAddress.addressId });
+    }
+  },
+
+  /** 修改收货地址 方法：PUT 路径：/addresses/{addressId} 请求体同 create */
+  async update(addressId, payload) {
+    try {
+      return await request(`/addresses/${addressId}`, { method: "PUT", body: payload });
+    } catch (err) {
+      console.warn("[AddressAPI.update] 使用模拟数据更新：", err.message);
+      const address = MOCK_ADDRESSES.find((a) => String(a.addressId) === String(addressId));
+      if (address) {
+        Object.assign(address, payload);
+        if (payload.isDefault) {
+          MOCK_ADDRESSES.forEach((a) => {
+            if (String(a.addressId) !== String(addressId)) a.isDefault = false;
+          });
+        }
+      }
+      persistMockAddresses();
+      return mockDelay({ ok: true });
+    }
+  },
+
+  /** 删除收货地址 方法：DELETE 路径：/addresses/{addressId} */
+  async remove(addressId) {
+    try {
+      return await request(`/addresses/${addressId}`, { method: "DELETE" });
+    } catch (err) {
+      console.warn("[AddressAPI.remove] 使用模拟数据删除：", err.message);
+      const idx = MOCK_ADDRESSES.findIndex((a) => String(a.addressId) === String(addressId));
+      if (idx !== -1) MOCK_ADDRESSES.splice(idx, 1);
+      persistMockAddresses();
+      return mockDelay({ ok: true });
+    }
+  },
+};
+
+/* ============================================================
  * 4. 订单与支付模块  OrderAPI
  * ============================================================ */
 const OrderAPI = {
   /**
    * 提交订单（下单）
    * 方法：POST 路径：/orders
-   * 请求体：{ cartItemIds: number[], couponId?: number, addressId?: number }
+   * 请求体：{ cartItemIds: number[], couponId?: number, addressId?: number,
+   *          receiverName: string, receiverPhone: string, receiverAddress: string }
+   *   说明：收货人 / 手机号 / 地址以下单时选中的快照为准，与地址簿解耦——
+   *   之后用户在地址簿中编辑或删除该条地址，不影响本订单已展示的收货信息。
    * 响应：{ orderId, orderNo, totalAmount, discountAmount, actualAmount }
    * 对应用例：4.2.4 Submit Order and Payment（下单部分）
    */
@@ -407,6 +478,9 @@ const OrderAPI = {
         totalAmount: payload.totalAmount || 0,
         discountAmount: payload.discountAmount || 0,
         actualAmount: payload.actualAmount || 0,
+        receiverName: payload.receiverName || "",
+        receiverPhone: payload.receiverPhone || "",
+        receiverAddress: payload.receiverAddress || "",
       });
     }
   },
