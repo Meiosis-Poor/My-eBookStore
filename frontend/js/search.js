@@ -7,10 +7,11 @@ const PAGE_SIZE = 12;
 let state = {
   keyword: qs("keyword") || "",
   categoryId: qs("categoryId") || "",
-  sort: "default",
+  sort: qs("sort") || "default",
   inStockOnly: false,
   page: 1,
   allResults: [],
+  total: 0,
 };
 
 async function loadCategories() {
@@ -43,21 +44,23 @@ async function runSearch() {
     keyword: state.keyword,
     categoryId: state.categoryId,
     sort: state.sort,
+    page: state.page,
+    pageSize: PAGE_SIZE,
+    inStockOnly: state.inStockOnly ? 1 : "",
   });
   let list = res.list || [];
-  if (state.inStockOnly) list = list.filter((b) => b.stock > 0);
   state.allResults = list;
+  state.total = res.total || list.length;
 
-  countEl.textContent = `共找到 ${list.length} 件相关商品`;
+  countEl.textContent = `共找到 ${state.total} 件相关商品`;
   renderPage();
 }
 
 function renderPage() {
   const grid = document.getElementById("searchResultGrid");
-  const totalPages = Math.max(1, Math.ceil(state.allResults.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(state.total / PAGE_SIZE));
   state.page = Math.min(state.page, totalPages);
-  const start = (state.page - 1) * PAGE_SIZE;
-  const pageItems = state.allResults.slice(start, start + PAGE_SIZE);
+  const pageItems = state.allResults;
 
   if (pageItems.length === 0) {
     grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
@@ -87,7 +90,7 @@ function renderPagination(totalPages) {
   pager.querySelectorAll("button[data-page]").forEach((btn) => {
     btn.addEventListener("click", () => {
       state.page = Number(btn.dataset.page);
-      renderPage();
+      runSearch();
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
   });

@@ -209,10 +209,17 @@ const BookAPI = {
    */
   async recommended(params = {}) {
     try {
-      return await request(`/books/recommended?limit=${params.limit || 10}`);
+      const qs = new URLSearchParams(
+        Object.entries({ limit: params.limit || 10, type: params.type }).filter(([, v]) => v !== undefined && v !== "")
+      ).toString();
+      return await request(`/books/recommended?${qs}`);
     } catch (err) {
       console.warn("[BookAPI.recommended] 使用模拟数据：", err.message);
-      return mockDelay(MOCK_BOOKS.slice(0, params.limit || 10));
+      const list =
+        params.type === "hot"
+          ? [...MOCK_BOOKS].sort((a, b) => b.salesCount - a.salesCount)
+          : MOCK_BOOKS;
+      return mockDelay(list.slice(0, params.limit || 10));
     }
   },
 
