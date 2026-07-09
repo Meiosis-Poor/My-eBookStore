@@ -304,3 +304,19 @@ CREATE TABLE store_blacklists(
 	created_time DATETIME2 NOT NULL DEFAULT SYSDATETIME()
 );
 GO
+CREATE TABLE recommendation_settings(
+	setting_id INT NOT NULL CONSTRAINT PK_recommendation_settings PRIMARY KEY DEFAULT 1,
+	guess_weight FLOAT NOT NULL DEFAULT 1,
+	hot_weight FLOAT NOT NULL DEFAULT 1,
+	search_embedding_enabled BIT NOT NULL DEFAULT 1,
+	detail_same_store_enabled BIT NOT NULL DEFAULT 1,
+	updated_time DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+	CONSTRAINT CK_recommendation_settings_singleton CHECK(setting_id = 1)
+);
+GO
+
+IF NOT EXISTS (SELECT 1 FROM recommendation_settings WHERE setting_id = 1)
+BEGIN
+	INSERT INTO recommendation_settings(setting_id) VALUES(1);
+END
+GO

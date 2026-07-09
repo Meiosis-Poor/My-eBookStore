@@ -8,7 +8,6 @@ pip install -r backend/requirements.txt
 copy backend\.env.sample backend\.env
 python backend\scripts\check_sql_server.py
 python backend\scripts\init_db.py
-python backend\scripts\backfill_embeddings.py
 uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 

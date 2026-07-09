@@ -43,19 +43,6 @@ def execute_if_needed(conn, batch: str) -> None:
     conn.cursor().execute(batch)
 
 
-def ensure_search_history_schema(conn) -> None:
-    if not table_exists(conn, "search_history"):
-        return
-    conn.cursor().execute(
-        """
-        IF COL_LENGTH('dbo.search_history', 'keyword_embedding') IS NULL
-        BEGIN
-            ALTER TABLE search_history ADD keyword_embedding NVARCHAR(MAX) NULL
-        END
-        """
-    )
-
-
 def main() -> None:
     sql_path = REPO_ROOT / "database" / "01_buildlist.sql"
     raw = read_text(sql_path)
@@ -73,7 +60,6 @@ def main() -> None:
             if upper.startswith("CREATE DATABASE") or upper.startswith("USE "):
                 continue
             execute_if_needed(conn, batch)
-        ensure_search_history_schema(conn)
         print("schema initialization succeeded.")
 
 

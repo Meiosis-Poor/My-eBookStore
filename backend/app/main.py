@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
@@ -10,7 +10,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from .config import settings
-from .db import get_conn, many, one
 from .embedding import cosine_distance, dumps as dump_embedding, embed_text, loads as load_embedding
 from .response import fail, http_exception_handler, ok
 from .security import (
@@ -24,7 +23,7 @@ from .security import (
     require_roles,
     verify_password,
 )
-from .dao import address_dao, book_dao, cart_dao, order_dao, promotion_dao, review_dao, stats_dao, store_dao
+from .dao import address_dao, book_dao, cart_dao, order_dao, promotion_dao, review_dao, stats_dao, store_dao, user_dao
 
 
 app = FastAPI(title=settings.app_name)
@@ -40,58 +39,11 @@ api = APIRouter(prefix=settings.api_prefix)
 
 
 STATUS_TO_DB = {"active": "正常", "banned": "封禁", "completed": "已完成", "cancelled": "已取消", "refunded": "已退款"}
-ORDER_TO_FRONT = {"待支付": "pending_payment", "已完成": "completed", "已取消": "cancelled", "已退款": "refunded"}
-PAY_TO_FRONT = {"未支付": "unpaid", "已支付": "paid", "已退款": "refunded"}
-COUPON_STATUS = {"unused": "未使用", "used": "已使用", "expired": "已过期"}
-COUPON_TYPE_TO_FRONT = {"平台券": "platform", "店铺券": "store"}
-REWARD_TYPE_TO_FRONT = {"实物": "physical", "代金券": "coupon", "虚拟商品": "virtual"}
-
-
-def now_no() -> str:
-    return datetime.now().strftime("%Y%m%d%H%M%S%f")
 
 
 def page_slice(items: list[dict[str, Any]], page: int, page_size: int) -> list[dict[str, Any]]:
     start = max(page - 1, 0) * page_size
     return items[start : start + page_size]
-
-
-def current_store_id(user: dict[str, Any]) -> int | None:
-    return user.get("store_id")
-
-
-def book_select_sql(where: str = "", order: str = "") -> str:
-    return f"""
-        SELECT
-            bi.book_info_id AS bookInfoId,
-            b.book_item_id AS bookItemId,
-            bi.book_name AS bookName,
-            bi.author AS author,
-            bi.publisher AS publisher,
-            bi.ISBN AS isbn,
-            bi.publish_date AS publishDate,
-            bi.description AS description,
-            bi.cover_image AS cover,
-            bi.embedding AS embedding,
-            bc.category_id AS categoryId,
-            bc.category_name AS categoryName,
-            b.store_id AS storeId,
-            s.store_name AS storeName,
-            b.price AS price,
-            b.price AS originPrice,
-            b.stock AS stock,
-            b.locked_stock AS lockedStock,
-            b.sales_count AS salesCount,
-            b.status AS itemStatus,
-            bi.status AS infoStatus
-        FROM book_items b
-        JOIN book_infos bi ON bi.book_info_id = b.book_info_id
-        JOIN book_categories bc ON bc.category_id = bi.category_id
-        JOIN stores s ON s.store_id = b.store_id
-        WHERE bi.status = N'正常' AND b.status = N'在售' AND s.status = N'正常'
-        {where}
-        {order}
-    """
 
 
 def normalize_book(row: dict[str, Any]) -> dict[str, Any]:
@@ -107,14 +59,6 @@ def normalize_book(row: dict[str, Any]) -> dict[str, Any]:
     return row
 
 
-def all_books(conn, where: str = "", params: tuple[Any, ...] = (), order: str = "") -> list[dict[str, Any]]:
-    return many(conn.cursor().execute(book_select_sql(where, order), *params))
-
-
-def book_detail(conn, book_item_id: int) -> dict[str, Any] | None:
-    return one(conn.cursor().execute(book_select_sql("AND b.book_item_id = ?"), book_item_id))
-
-
 def sort_by_embedding(books: list[dict[str, Any]], target: list[float]) -> list[dict[str, Any]]:
     def distance(book: dict[str, Any]) -> float:
         vec = load_embedding(book.get("embedding")) or embed_text(book.get("bookName") or "")
@@ -123,34 +67,21 @@ def sort_by_embedding(books: list[dict[str, Any]], target: list[float]) -> list[
     return sorted(books, key=lambda b: (distance(b), -(b.get("salesCount") or 0)))
 
 
-def hot_books(conn, limit: int) -> list[dict[str, Any]]:
-    rows = all_books(conn, order="ORDER BY b.sales_count DESC, b.book_item_id DESC")
+def hot_books(limit: int) -> list[dict[str, Any]]:
+    rows = book_dao.list_books(sort="sales")
     return [normalize_book(row) for row in rows[:limit]]
 
 
-def guess_books(conn, user_id: int | None, limit: int) -> list[dict[str, Any]]:
+def guess_books(user_id: int | None, limit: int) -> list[dict[str, Any]]:
     if not user_id:
-        return hot_books(conn, limit)
-    try:
-        searches = many(
-            conn.cursor().execute(
-                """
-                SELECT TOP 5 keyword, keyword_embedding AS embedding
-                FROM search_history
-                WHERE user_id = ?
-                ORDER BY created_time DESC, search_id DESC
-                """,
-                user_id,
-            )
-        )
-    except Exception:
-        searches = []
+        return hot_books(limit)
+    searches = book_dao.latest_searches(user_id, 5)
     if not searches:
-        return hot_books(conn, limit)
+        return hot_books(limit)
 
     vectors = [load_embedding(s.get("embedding")) or embed_text(s["keyword"]) for s in searches]
     best_by_info: dict[int, dict[str, Any]] = {}
-    for row in all_books(conn):
+    for row in book_dao.list_books():
         current = best_by_info.get(row["bookInfoId"])
         if current is None or (row.get("salesCount") or 0) > (current.get("salesCount") or 0):
             best_by_info[row["bookInfoId"]] = row
@@ -168,29 +99,6 @@ def require_store_owner(user: dict[str, Any], store_id: int) -> None:
         fail("鏃犳潈闄愮淮鎶よ搴楅摵", 403)
 
 
-def user_coupon_discount(conn, user_id: int, coupon_id: int | None, total: float) -> float:
-    if not coupon_id:
-        return 0.0
-    row = one(
-        conn.cursor().execute(
-            """
-            SELECT uc.user_coupon_id, c.amount, c.min_amount
-            FROM user_coupons uc
-            JOIN coupons c ON c.coupon_id = uc.coupon_id
-            WHERE uc.user_id = ? AND c.coupon_id = ? AND uc.status = N'未使用'
-              AND c.status = N'启用' AND c.valid_start <= SYSDATETIME() AND c.valid_end >= SYSDATETIME()
-            """,
-            user_id,
-            coupon_id,
-        )
-    )
-    if not row:
-        fail("浠ｉ噾鍒镐笉鍙敤")
-    if total < float(row["min_amount"] or 0):
-        fail("订单金额未达到代金券使用门槛")
-    return min(float(row["amount"] or 0), total)
-
-
 @api.get("/health")
 def health() -> dict[str, Any]:
     return ok({"status": "ok", "time": datetime.now().isoformat(timespec="seconds")})
@@ -203,26 +111,16 @@ def register_user(payload: dict[str, Any] = Body(...)) -> dict[str, Any]:
     nickname = (payload.get("nickname") or user_name).strip()
     if len(user_name) < 3 or len(password) < 6:
         fail("用户名或密码格式不正确")
-    with get_conn() as conn:
-        if conn.cursor().execute("SELECT 1 FROM users WHERE user_name = ?", user_name).fetchone():
-            fail("用户名已被占用")
-        row = conn.cursor().execute(
-            """
-            INSERT INTO users(user_name, password_hash, phone, email, user_type)
-            OUTPUT INSERTED.user_id
-            VALUES (?, ?, ?, ?, N'普通用户')
-            """,
-            user_name,
-            hash_password(password),
-            payload.get("phone"),
-            payload.get("email"),
-        ).fetchone()
-        user_id = int(row[0])
-        conn.cursor().execute(
-            "INSERT INTO ordinary_users(user_id, nickname) VALUES (?, ?)",
-            user_id,
-            nickname or user_name,
+    try:
+        user_id = user_dao.create_customer(
+            user_name=user_name,
+            password_hash=hash_password(password),
+            nickname=nickname or user_name,
+            phone=payload.get("phone"),
+            email=payload.get("email"),
         )
+    except ValueError as exc:
+        fail(str(exc))
     return ok({"userId": user_id})
 
 
@@ -233,38 +131,19 @@ def register_seller(payload: dict[str, Any] = Body(...)) -> dict[str, Any]:
     store_name = (payload.get("storeName") or "").strip()
     if len(user_name) < 3 or len(password) < 6 or not store_name:
         fail("注册信息不完整或格式不正确")
-    with get_conn() as conn:
-        if conn.cursor().execute("SELECT 1 FROM users WHERE user_name = ?", user_name).fetchone():
-            fail("用户名已被占用")
-        if conn.cursor().execute("SELECT 1 FROM stores WHERE store_name = ?", store_name).fetchone():
-            fail("店铺名已被占用")
-        user_id = int(
-            conn.cursor()
-            .execute(
-                """
-                INSERT INTO users(user_name, password_hash, phone, email, user_type)
-                OUTPUT INSERTED.user_id
-                VALUES (?, ?, ?, ?, N'书店管理员')
-                """,
-                user_name,
-                hash_password(password),
-                payload.get("phone"),
-                payload.get("email"),
-            )
-            .fetchone()[0]
+    try:
+        data = user_dao.create_seller(
+            user_name=user_name,
+            password_hash=hash_password(password),
+            store_name=store_name,
+            nickname=payload.get("nickname") or user_name,
+            phone=payload.get("phone"),
+            email=payload.get("email"),
+            description=payload.get("description"),
         )
-        conn.cursor().execute("INSERT INTO store_admins(user_id, admin_name) VALUES (?, ?)", user_id, payload.get("nickname") or user_name)
-        store_id = int(
-            conn.cursor()
-            .execute(
-                "INSERT INTO stores(store_name, user_id, description) OUTPUT INSERTED.store_id VALUES (?, ?, ?)",
-                store_name,
-                user_id,
-                payload.get("description") or "",
-            )
-            .fetchone()[0]
-        )
-    return ok({"userId": user_id, "storeId": store_id})
+    except ValueError as exc:
+        fail(str(exc))
+    return ok(data)
 
 
 @api.post("/auth/login")
@@ -273,20 +152,7 @@ def login(payload: dict[str, Any] = Body(...)) -> dict[str, Any]:
     user_type = ROLE_TO_DB.get(role)
     if not user_type:
         fail("账号类型不正确")
-    with get_conn() as conn:
-        user = one(
-            conn.cursor().execute(
-                """
-                SELECT u.*, ou.nickname, ou.level, ou.total_points, ou.available_points, ou.continuous_checkin_days,
-                       s.store_id, s.store_name
-                FROM users u
-                LEFT JOIN ordinary_users ou ON ou.user_id = u.user_id
-                LEFT JOIN stores s ON s.user_id = u.user_id
-                WHERE u.user_name = ?
-                """,
-                payload.get("userName"),
-            )
-        )
+    user = user_dao.get_auth_user_by_name(payload.get("userName"))
     if not user or not verify_password(payload.get("password") or "", user["password_hash"]):
         fail("鐢ㄦ埛鍚嶆垨瀵嗙爜閿欒", 401)
     if user["user_type"] != user_type:
@@ -340,18 +206,12 @@ def list_books(
         sort=sort,
         in_stock_only=bool(inStockOnly),
     )
-    try:
-        search_embedding_enabled = stats_dao.recommendation_settings().get("searchEmbeddingEnabled", True)
-    except Exception:
-        search_embedding_enabled = True
+    search_embedding_enabled = stats_dao.recommendation_settings().get("searchEmbeddingEnabled", True)
     if keyword and sort == "default" and search_embedding_enabled:
         keyword_embedding = embed_text(keyword)
         rows = sort_by_embedding(rows, keyword_embedding)
         if user:
-            try:
-                book_dao.save_search_history(user["user_id"], keyword, dump_embedding(keyword_embedding))
-            except Exception:
-                pass
+            book_dao.save_search_history(user["user_id"], keyword, dump_embedding(keyword_embedding))
     items = [normalize_book(row) for row in page_slice(rows, page, pageSize)]
     return ok({"list": items, "total": len(rows)})
 
@@ -362,29 +222,25 @@ def recommended_books(
     type: str = Query("guess"),
     user: Optional[dict[str, Any]] = Depends(optional_user),
 ) -> dict[str, Any]:
-    with get_conn() as conn:
-        if type == "hot":
-            rows = hot_books(conn, limit)
-        else:
-            rows = guess_books(conn, user["user_id"] if user else None, limit)
-            try:
-                settings = stats_dao.recommendation_settings()
-            except Exception:
-                settings = {"guessWeight": 1, "hotWeight": 1}
-            if settings.get("guessWeight") != 1 or settings.get("hotWeight") != 1:
-                hot = hot_books(conn, limit)
-                by_id = {book["bookItemId"]: book for book in rows + hot}
-                guess_rank = {book["bookItemId"]: idx + 1 for idx, book in enumerate(rows)}
-                hot_rank = {book["bookItemId"]: idx + 1 for idx, book in enumerate(hot)}
-                guess_weight = max(float(settings.get("guessWeight") or 1), 0.1)
-                hot_weight = max(float(settings.get("hotWeight") or 1), 0.1)
-                rows = sorted(
-                    by_id.values(),
-                    key=lambda book: (
-                        guess_rank.get(book["bookItemId"], limit + 1) / guess_weight
-                        + hot_rank.get(book["bookItemId"], limit + 1) / hot_weight
-                    ),
-                )[:limit]
+    if type == "hot":
+        rows = hot_books(limit)
+    else:
+        rows = guess_books(user["user_id"] if user else None, limit)
+        settings = stats_dao.recommendation_settings()
+        if settings.get("guessWeight") != 1 or settings.get("hotWeight") != 1:
+            hot = hot_books(limit)
+            by_id = {book["bookItemId"]: book for book in rows + hot}
+            guess_rank = {book["bookItemId"]: idx + 1 for idx, book in enumerate(rows)}
+            hot_rank = {book["bookItemId"]: idx + 1 for idx, book in enumerate(hot)}
+            guess_weight = max(float(settings.get("guessWeight") or 1), 0.1)
+            hot_weight = max(float(settings.get("hotWeight") or 1), 0.1)
+            rows = sorted(
+                by_id.values(),
+                key=lambda book: (
+                    guess_rank.get(book["bookItemId"], limit + 1) / guess_weight
+                    + hot_rank.get(book["bookItemId"], limit + 1) / hot_weight
+                ),
+            )[:limit]
     return ok(rows)
 
 
@@ -403,11 +259,8 @@ def get_book(bookItemId: int) -> dict[str, Any]:
 def similar_books(bookItemId: int) -> dict[str, Any]:
     if not book_dao.get_detail(bookItemId):
         fail("图书不存在", 404)
-    try:
-        if not stats_dao.recommendation_settings().get("detailSameStoreEnabled", True):
-            return ok([])
-    except Exception:
-        pass
+    if not stats_dao.recommendation_settings().get("detailSameStoreEnabled", True):
+        return ok([])
     rows = book_dao.get_similar_same_store_category(bookItemId, 3)
     return ok([normalize_book(row) for row in rows[:3]])
 
@@ -550,37 +403,6 @@ def order_pay(orderId: int, payload: dict[str, Any] = Body(...), user: dict[str,
     return ok(data)
 
 
-def order_public(conn, row: dict[str, Any]) -> dict[str, Any]:
-    items = many(
-        conn.cursor().execute(
-            """
-            SELECT oi.book_item_id AS bookItemId, bi.book_name AS bookName, bi.cover_image AS cover,
-                   oi.unit_price AS unitPrice, oi.quantity
-            FROM order_items oi
-            JOIN book_items b ON b.book_item_id = oi.book_item_id
-            JOIN book_infos bi ON bi.book_info_id = b.book_info_id
-            WHERE oi.order_id = ?
-            """,
-            row["order_id"],
-        )
-    )
-    return {
-        "orderId": row["order_id"],
-        "orderNo": row["order_no"],
-        "orderStatus": ORDER_TO_FRONT.get(row["order_status"], row["order_status"]),
-        "paymentStatus": PAY_TO_FRONT.get(row["payment_status"], row["payment_status"]),
-        "statusLabel": row["order_status"],
-        "totalAmount": float(row["total_amount"]),
-        "discountAmount": float(row["discount_amount"]),
-        "actualAmount": float(row["actual_amount"]),
-        "createdTime": str(row["created_time"]),
-        "receiverName": row["receiver_name"],
-        "receiverPhone": row["receiver_phone"],
-        "receiverAddress": row["receiver_addr"],
-        "items": [{**item, "cover": item.get("cover") or "📘"} for item in items],
-    }
-
-
 @api.get("/orders")
 def order_list(status: str = "all", page: int = 1, pageSize: int = 20, user: dict[str, Any] = Depends(current_user)) -> dict[str, Any]:
     public = order_dao.list_orders(user["user_id"], status)
@@ -690,15 +512,7 @@ def my_points(page: int = 1, pageSize: int = 20, user: dict[str, Any] = Depends(
 
 @api.put("/users/me")
 def update_me(payload: dict[str, Any] = Body(...), user: dict[str, Any] = Depends(current_user)) -> dict[str, Any]:
-    with get_conn() as conn:
-        conn.cursor().execute(
-            "UPDATE users SET phone = COALESCE(?, phone), email = COALESCE(?, email) WHERE user_id = ?",
-            payload.get("phone"),
-            payload.get("email"),
-            user["user_id"],
-        )
-        if payload.get("nickname"):
-            conn.cursor().execute("UPDATE ordinary_users SET nickname = ? WHERE user_id = ?", payload["nickname"], user["user_id"])
+    user_dao.update_profile(user["user_id"], payload)
     return ok({"ok": True})
 
 
@@ -789,40 +603,8 @@ def admin_refund(orderId: int, action: str, _: dict[str, Any] = Depends(require_
 
 @api.get("/admin/users")
 def admin_users(keyword: Optional[str] = None, user: dict[str, Any] = Depends(require_roles("seller", "platform_admin"))) -> dict[str, Any]:
-    with get_conn() as conn:
-        if DB_TO_ROLE.get(user["user_type"]) == "seller":
-            rows = many(
-                conn.cursor().execute(
-                    """
-                    SELECT DISTINCT u.user_id AS userId, u.user_name AS userName, COALESCE(ou.nickname, u.user_name) AS nickname,
-                           CASE WHEN u.status = N'正常' THEN 'active' ELSE 'banned' END AS status,
-                           u.created_time AS registeredAt
-                    FROM users u
-                    LEFT JOIN ordinary_users ou ON ou.user_id = u.user_id
-                    JOIN orders o ON o.user_id = u.user_id
-                    JOIN order_items oi ON oi.order_id = o.order_id
-                    JOIN book_items b ON b.book_item_id = oi.book_item_id
-                    WHERE u.user_type = N'普通用户' AND b.store_id = ?
-                    ORDER BY u.created_time DESC
-                    """,
-                    user["store_id"],
-                )
-            )
-        else:
-            rows = many(
-                conn.cursor().execute(
-                    """
-                    SELECT u.user_id AS userId, u.user_name AS userName, COALESCE(ou.nickname, u.user_name) AS nickname,
-                           CASE WHEN u.status = N'正常' THEN 'active' ELSE 'banned' END AS status,
-                           u.created_time AS registeredAt
-                    FROM users u LEFT JOIN ordinary_users ou ON ou.user_id = u.user_id
-                    WHERE u.user_type = N'普通用户'
-                    ORDER BY u.created_time DESC
-                    """
-                )
-            )
-    if keyword:
-        rows = [r for r in rows if keyword.lower() in (r["userName"] or "").lower() or keyword.lower() in (r["nickname"] or "").lower()]
+    store_id = user["store_id"] if DB_TO_ROLE.get(user["user_type"]) == "seller" else None
+    rows = user_dao.list_customers(keyword, store_id)
     return ok({"list": rows, "total": len(rows)})
 
 
@@ -834,8 +616,7 @@ def admin_blacklist(userId: int, payload: dict[str, Any] = Body(...), user: dict
 
 @api.put("/admin/users/{userId}/status")
 def admin_user_status(userId: int, payload: dict[str, Any] = Body(...), _: dict[str, Any] = Depends(require_roles("platform_admin"))) -> dict[str, Any]:
-    with get_conn() as conn:
-        conn.cursor().execute("UPDATE users SET status = ? WHERE user_id = ?", STATUS_TO_DB.get(payload.get("status"), "正常"), userId)
+    user_dao.set_user_status(userId, STATUS_TO_DB.get(payload.get("status"), "正常"))
     return ok({"ok": True})
 
 

@@ -9,7 +9,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from .config import settings
-from .db import get_conn, one
+from .dao import user_dao
 from .response import fail
 
 
@@ -51,19 +51,7 @@ def current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(b
     except (JWTError, TypeError, ValueError):
         fail("登录状态已失效，请重新登录", 401)
 
-    with get_conn() as conn:
-        cur = conn.cursor().execute(
-            """
-            SELECT u.*, ou.nickname, ou.level, ou.total_points, ou.available_points, ou.continuous_checkin_days,
-                   s.store_id, s.store_name
-            FROM users u
-            LEFT JOIN ordinary_users ou ON ou.user_id = u.user_id
-            LEFT JOIN stores s ON s.user_id = u.user_id
-            WHERE u.user_id = ?
-            """,
-            user_id,
-        )
-        user = one(cur)
+    user = user_dao.get_auth_user_by_id(user_id)
     if not user:
         fail("用户不存在", 401)
     if user["status"] == "封禁":

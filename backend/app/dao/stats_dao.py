@@ -210,32 +210,7 @@ def export_rows(store_id: int | None = None, range_name: str = "7d") -> list[dic
     return rows
 
 
-def ensure_recommendation_settings() -> None:
-    with get_conn() as conn:
-        conn.cursor().execute(
-            """
-            IF OBJECT_ID(N'dbo.recommendation_settings', N'U') IS NULL
-            BEGIN
-                CREATE TABLE dbo.recommendation_settings(
-                    setting_id INT NOT NULL CONSTRAINT PK_recommendation_settings PRIMARY KEY DEFAULT 1,
-                    guess_weight FLOAT NOT NULL DEFAULT 1,
-                    hot_weight FLOAT NOT NULL DEFAULT 1,
-                    search_embedding_enabled BIT NOT NULL DEFAULT 1,
-                    detail_same_store_enabled BIT NOT NULL DEFAULT 1,
-                    updated_time DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
-                    CONSTRAINT CK_recommendation_settings_singleton CHECK(setting_id = 1)
-                );
-            END
-            IF NOT EXISTS (SELECT 1 FROM dbo.recommendation_settings WHERE setting_id = 1)
-            BEGIN
-                INSERT INTO dbo.recommendation_settings(setting_id) VALUES(1);
-            END
-            """
-        )
-
-
 def recommendation_settings() -> dict[str, Any]:
-    ensure_recommendation_settings()
     with get_conn() as conn:
         row = one(conn.cursor().execute("SELECT * FROM recommendation_settings WHERE setting_id = 1"))
     return {
@@ -248,7 +223,6 @@ def recommendation_settings() -> dict[str, Any]:
 
 
 def update_recommendation_settings(payload: dict[str, Any]) -> dict[str, Any]:
-    ensure_recommendation_settings()
     with get_conn() as conn:
         conn.cursor().execute(
             """
