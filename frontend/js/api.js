@@ -172,7 +172,8 @@ const BookAPI = {
   /**
    * 分类浏览 / 关键词搜索图书列表
    * 方法：GET 路径：/books
-   * Query：{ keyword?, categoryId?, sort?: "default"|"sales"|"price_asc"|"price_desc", page?, pageSize? }
+   * Query：{ keyword?, searchType?: "title"|"author"|"isbn"（默认 title，三种搜索方式互斥，不做混合匹配）,
+   *          categoryId?, sort?: "default"|"sales"|"price_asc"|"price_desc", page?, pageSize? }
    * 响应：{ list: BookItem[], total: number }
    * 对应用例：4.2.2 Browse and Search Books
    */
@@ -190,9 +191,12 @@ const BookAPI = {
       }
       if (params.keyword) {
         const kw = params.keyword.trim().toLowerCase();
-        list = list.filter(
-          (b) => b.bookName.toLowerCase().includes(kw) || b.author.toLowerCase().includes(kw)
-        );
+        const searchType = params.searchType || "title";
+        list = list.filter((b) => {
+          if (searchType === "author") return b.author.toLowerCase().includes(kw);
+          if (searchType === "isbn") return b.isbn.toLowerCase().includes(kw);
+          return b.bookName.toLowerCase().includes(kw);
+        });
       }
       if (params.sort === "sales") list.sort((a, b) => b.salesCount - a.salesCount);
       if (params.sort === "price_asc") list.sort((a, b) => a.price - b.price);
@@ -315,6 +319,37 @@ const StoreAPI = {
         Object.assign(profile, payload);
         persistMockStoreProfiles();
       }
+      return mockDelay({ ok: true });
+    }
+  },
+};
+
+/* ============================================================
+ * 2.6 搜索历史模块  SearchAPI
+ * 场景：搜索框获得焦点 / 内容为空时下拉展示当前用户的历史搜索关键词
+ * ============================================================ */
+const SearchAPI = {
+  /** 获取当前用户的搜索历史（按时间倒序） 方法：GET 路径：/search/history 响应：string[] */
+  async history() {
+    try {
+      return await request("/search/history");
+    } catch (err) {
+      console.warn("[SearchAPI.history] 使用模拟数据：", err.message);
+      return mockDelay([...MOCK_SEARCH_HISTORY]);
+    }
+  },
+
+  /**
+   * 记录一次搜索关键词（用户提交搜索后调用，静默失败即可，不影响搜索本身）
+   * 方法：POST 路径：/search/history 请求体：{ keyword: string }
+   */
+  async record(keyword) {
+    if (!keyword || !keyword.trim()) return;
+    try {
+      return await request("/search/history", { method: "POST", body: { keyword } });
+    } catch (err) {
+      MOCK_SEARCH_HISTORY = [keyword, ...MOCK_SEARCH_HISTORY.filter((k) => k !== keyword)].slice(0, 8);
+      persistMockSearchHistory();
       return mockDelay({ ok: true });
     }
   },
@@ -880,7 +915,11 @@ const AdminAPI = {
         return mockDelay({ ok: true });
       }
     },
-    /** 书店管理员设置是否参与活动及参与书目/店铺券额度 方法：POST 路径：/admin/promotions/activities/{activityId}/store-participation */
+    /**
+     * 书店管理员设置是否参与活动及参与书目/店铺券额度
+     * 方法：POST 路径：/admin/promotions/activities/{activityId}/store-participation
+     * 请求体：{ participate: boolean, bookItemIds: number[]（从本店库存图书下拉框多选得到）, couponAmount, couponQuantity }
+     */
     async setStoreParticipation(activityId, payload) {
       try {
         return await request(`/admin/promotions/activities/${activityId}/store-participation`, {

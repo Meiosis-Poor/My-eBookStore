@@ -118,6 +118,28 @@ function persistMockAddresses() {
   localStorage.setItem(ADDRESSES_STORAGE_KEY, JSON.stringify(MOCK_ADDRESSES));
 }
 
+/**
+ * 用户搜索历史，供搜索框下拉展示，真实场景下应由后端按用户维度返回。
+ * 通过 localStorage 持久化，行为与地址簿 / 店铺信息一致。
+ */
+const SEARCH_HISTORY_STORAGE_KEY = "ebs_mock_search_history";
+
+function loadMockSearchHistory() {
+  try {
+    const raw = localStorage.getItem(SEARCH_HISTORY_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (err) {
+    /* 忽略解析失败，回退到空列表 */
+  }
+  return [];
+}
+
+let MOCK_SEARCH_HISTORY = loadMockSearchHistory();
+
+function persistMockSearchHistory() {
+  localStorage.setItem(SEARCH_HISTORY_STORAGE_KEY, JSON.stringify(MOCK_SEARCH_HISTORY));
+}
+
 const MOCK_COUPONS = [
   { couponId: 1, couponName: "新人无门槛券", couponType: "platform", amount: 5, minAmount: 0, validEnd: "2026-08-31" },
   { couponId: 2, couponName: "满99减15", couponType: "platform", amount: 15, minAmount: 99, validEnd: "2026-08-15" },

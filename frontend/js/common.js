@@ -68,6 +68,15 @@ function maskPhone(phone) {
   const str = String(phone || "");
   return str.length === 11 ? `${str.slice(0, 3)}****${str.slice(7)}` : str;
 }
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = String(str ?? "");
+  return div.innerHTML;
+}
+/** 当前登录用户是否为管理员角色（书店管理员 / 后台管理员），二者均不具备购买行为 */
+function isAdminRole(user) {
+  return !!user && (user.userType === "seller" || user.userType === "platform_admin");
+}
 
 /* ---------- 登录态校验 ---------- */
 /** 需要登录才能访问的操作：未登录时提示并跳转登录页，登录后可通过 redirect 参数回跳 */
@@ -116,14 +125,20 @@ function renderHeaderAuthArea() {
     return;
   }
 
+  // 书店管理员 / 后台管理员登录后不具备普通用户的购物行为，下拉菜单不再展示
+  // “个人中心 / 我的订单 / 促销活动”，改为直达后台管理入口
+  const menuLinksHtml = isAdminRole(user)
+    ? `<a href="admin/dashboard.html">后台管理</a>`
+    : `<a href="profile.html">个人中心</a>
+       <a href="orders.html">我的订单</a>
+       <a href="promotions.html">促销活动</a>`;
+
   area.innerHTML = `
     <div class="user-chip" id="userChipTrigger">
       <div class="avatar">${(user.nickname || user.userName || "U").slice(0, 1)}</div>
       <span>${user.nickname || user.userName}</span>
       <div class="user-menu" id="userChipMenu">
-        <a href="profile.html">个人中心</a>
-        <a href="orders.html">我的订单</a>
-        <a href="promotions.html">促销活动</a>
+        ${menuLinksHtml}
         <button type="button" data-action="logout">退出登录</button>
       </div>
     </div>`;
@@ -167,6 +182,13 @@ function renderBookCard(book) {
 
 /** 为容器内所有“加入购物车”按钮绑定事件（阻止冒泡，避免触发卡片跳转链接） */
 function bindAddToCartButtons(container) {
+  // 书店管理员 / 后台管理员不具备购买行为，图书卡片上的“＋”按钮全局隐藏
+  if (isAdminRole(getCurrentUser())) {
+    // .icon-btn 自身设置了 display:flex，优先级与原生 [hidden] 样式打平后会覆盖它，
+    // 因此这里必须用 .hidden（!important）而非 hidden 属性来真正隐藏按钮
+    container.querySelectorAll('[data-action="add-cart"]').forEach((btn) => btn.classList.add("hidden"));
+    return;
+  }
   container.querySelectorAll('[data-action="add-cart"]').forEach((btn) => {
     btn.addEventListener("click", async (e) => {
       e.preventDefault();
@@ -201,10 +223,61 @@ async function initAccountSidebar(activeNavKey) {
   }
 }
 
+/* ---------- 搜索历史下拉（挂载于顶部导航搜索框） ---------- */
+function initSearchHistoryDropdown(input) {
+  const wrap = input.closest(".header-search");
+  if (!wrap) return;
+  const dropdown = document.createElement("div");
+  dropdown.className = "search-history-dropdown";
+  wrap.appendChild(dropdown);
+
+  async function renderHistory() {
+    /**
+     * 接口对接位置：SearchAPI.history()
+     * 请求：GET /api/search/history，响应：string[]（按用户维度返回的历史搜索关键词）
+     */
+    const history = await SearchAPI.history();
+    if (!history.length) {
+      dropdown.classList.remove("is-open");
+      return;
+    }
+    dropdown.innerHTML = `
+      <div class="search-history-title">搜索历史</div>
+      ${history.map((kw) => `<div class="search-history-item" data-kw="${escapeHtml(kw)}">${escapeHtml(kw)}</div>`).join("")}`;
+    dropdown.querySelectorAll(".search-history-item").forEach((item) => {
+      item.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        input.value = item.dataset.kw;
+        dropdown.classList.remove("is-open");
+        const form = input.closest("form");
+        if (form.requestSubmit) form.requestSubmit();
+        else form.submit();
+      });
+    });
+    dropdown.classList.add("is-open");
+  }
+
+  input.addEventListener("focus", renderHistory);
+  input.addEventListener("input", () => {
+    if (!input.value) renderHistory();
+    else dropdown.classList.remove("is-open");
+  });
+  document.addEventListener("click", (e) => {
+    if (!wrap.contains(e.target)) dropdown.classList.remove("is-open");
+  });
+}
+
 /* ---------- 页面初始化 ---------- */
 document.addEventListener("DOMContentLoaded", () => {
   renderHeaderAuthArea();
   refreshCartBadge();
+
+  // 书店管理员 / 后台管理员登录后不具备购买行为，全局隐藏购物车入口
+  if (isAdminRole(getCurrentUser())) {
+    document.querySelectorAll(".cart-link").forEach((el) => el.classList.add("hidden"));
+  }
+
+  document.querySelectorAll('.header-search input[type="search"]').forEach(initSearchHistoryDropdown);
 
   // 移动端导航菜单开关（如页面包含 .nav-toggle 按钮）
   const navToggle = document.querySelector(".nav-toggle");

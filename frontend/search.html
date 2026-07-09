@@ -19,9 +19,14 @@
       </nav>
       <div class="header-search">
         <form id="searchForm">
-          <input type="search" id="searchKeywordInput" class="form-control" placeholder="搜索书名 / 作者 / ISBN" />
+          <input type="search" id="searchKeywordInput" class="form-control" placeholder="请输入搜索内容" />
           <button type="submit" class="btn btn-primary">搜索</button>
         </form>
+        <div class="search-mode-bar" id="searchModeBar">
+          <button type="button" data-mode="title" class="active">书名</button>
+          <button type="button" data-mode="author">作者</button>
+          <button type="button" data-mode="isbn">ISBN</button>
+        </div>
       </div>
       <div class="header-actions">
         <a href="cart.html" class="cart-link">🛒<span class="cart-badge" id="cartBadge" hidden>0</span></a>

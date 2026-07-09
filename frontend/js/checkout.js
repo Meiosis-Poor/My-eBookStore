@@ -129,33 +129,41 @@ function calcSubtotal() {
   return checkoutItems.reduce((sum, item) => sum + (item.book ? item.book.price : 0) * item.quantity, 0);
 }
 
+/** 满减是否生效：需商品总额达到代金券的使用门槛（minAmount）才可计入优惠 */
+function isCouponEligible(coupon, subtotal) {
+  return !!coupon && subtotal >= coupon.minAmount;
+}
+
 function updateSummary() {
   const subtotal = calcSubtotal();
-  const discount = selectedCoupon ? selectedCoupon.amount : 0;
+  const eligible = isCouponEligible(selectedCoupon, subtotal);
+  const discount = eligible ? selectedCoupon.amount : 0;
   const total = Math.max(0, subtotal - discount);
   document.getElementById("summarySubtotal").textContent = formatPrice(subtotal);
   document.getElementById("summaryDiscount").textContent = `- ${formatPrice(discount)}`;
   document.getElementById("summaryTotal").textContent = formatPrice(total);
-  document.getElementById(
-    "couponLabel"
-  ).textContent = selectedCoupon ? `${selectedCoupon.couponName}（-¥${selectedCoupon.amount}）` : "选择可用代金券";
+  document.getElementById("couponLabel").textContent = eligible
+    ? `${selectedCoupon.couponName}（-¥${selectedCoupon.amount}）`
+    : "选择可用代金券";
 }
 
 async function loadCoupons() {
   const list = await PromotionAPI.myCoupons("unused");
+  const subtotal = calcSubtotal();
   const box = document.getElementById("couponList");
   box.innerHTML = `
     <label class="filter-option"><input type="radio" name="couponRadio" value="" checked /> 不使用代金券</label>
     ${list
-      .map(
-        (c) => `
-      <label class="filter-option">
-        <input type="radio" name="couponRadio" value="${c.couponId}" />
-        ${c.couponName}（满${c.minAmount}减${c.amount}）
-      </label>`
-      )
+      .map((c) => {
+        const eligible = subtotal >= c.minAmount;
+        return `
+      <label class="filter-option ${eligible ? "" : "is-disabled"}">
+        <input type="radio" name="couponRadio" value="${c.couponId}" ${eligible ? "" : "disabled"} />
+        ${c.couponName}（满${c.minAmount}减${c.amount}）${eligible ? "" : `<span class="text-muted">（还差¥${(c.minAmount - subtotal).toFixed(2)}可用）</span>`}
+      </label>`;
+      })
       .join("")}`;
-  box.querySelectorAll('input[name="couponRadio"]').forEach((input) => {
+  box.querySelectorAll('input[name="couponRadio"]:not([disabled])').forEach((input) => {
     input.addEventListener("change", () => {
       selectedCoupon = list.find((c) => String(c.couponId) === input.value) || null;
     });
@@ -198,7 +206,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     closeModal("addressModal");
   });
   document.getElementById("showAddAddressBtn").addEventListener("click", () => showAddressFormView(null));
-  document.getElementById("cancelAddressFormBtn").addEventListener("click", () => showAddressListView());
   document.getElementById("saveAddressBtn").addEventListener("click", async () => {
     const form = document.getElementById("addressForm");
     if (!form.reportValidity()) return;
