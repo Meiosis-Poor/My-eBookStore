@@ -394,6 +394,69 @@
 .switch input:checked + .slider { background: var(--color-primary); }
 .switch input:checked + .slider::before { transform: translateX(18px); }
 
+/* “参与书目”自定义下拉多选：宽度不受限，选中项左侧打勾 */
+.book-multiselect {
+  position: relative;
+}
+.book-multiselect-trigger {
+  width: 100%;
+  text-align: left;
+  padding: 9px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-size: 13px;
+  color: var(--color-text);
+}
+.book-multiselect-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  width: max-content;
+  min-width: 100%;
+  max-width: 420px;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-2);
+  display: none;
+  z-index: 60;
+}
+.book-multiselect-panel.is-open {
+  display: block;
+}
+.book-ms-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: normal;
+  line-height: 1.4;
+}
+.book-ms-option:hover {
+  background: var(--color-primary-light);
+}
+.book-ms-option input[type="checkbox"] {
+  display: none;
+}
+.book-ms-check {
+  flex-shrink: 0;
+  width: 14px;
+  color: var(--color-primary);
+  font-weight: 700;
+  visibility: hidden;
+}
+.book-ms-option input:checked ~ .book-ms-check {
+  visibility: visible;
+}
+
 @media (max-width: 1100px) {
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }
   .panel-grid { grid-template-columns: 1fr; }

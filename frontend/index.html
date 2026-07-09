@@ -20,12 +20,18 @@
       </nav>
       <div class="header-search">
         <form action="search.html" method="get">
-          <input type="search" name="keyword" class="form-control" placeholder="搜索书名 / 作者 / ISBN" />
+          <input type="search" name="keyword" class="form-control" placeholder="请输入搜索内容" />
+          <input type="hidden" name="searchType" value="title" />
           <button type="submit" class="btn btn-primary">搜索</button>
         </form>
+        <div class="search-mode-bar">
+          <button type="button" data-mode="title" class="active">书名</button>
+          <button type="button" data-mode="author">作者</button>
+          <button type="button" data-mode="isbn">ISBN</button>
+        </div>
       </div>
       <div class="header-actions">
-        <a href="cart.html" class="cart-link" title="购物车">🛒<span class="cart-badge" id="cartBadge" hidden>0</span></a>
+        <a href="cart.html" class="cart-link" title="购物车">🛒<span class="cart-badge hidden" id="cartBadge">0</span></a>
         <div id="authArea"></div>
       </div>
     </div>

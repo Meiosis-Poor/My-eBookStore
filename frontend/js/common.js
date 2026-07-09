@@ -106,7 +106,9 @@ function refreshCartBadge() {
   if (!badge) return;
   const count = getLocalCartCount();
   badge.textContent = count > 99 ? "99+" : String(count);
-  badge.hidden = count === 0;
+  // .cart-badge 自身设置了 display:flex，与原生 hidden 属性同优先级时会被作者样式表覆盖，
+  // 必须用 .hidden（!important）才能真正隐藏
+  badge.classList.toggle("hidden", count === 0);
 }
 document.addEventListener("cart:updated", refreshCartBadge);
 
@@ -223,6 +225,28 @@ async function initAccountSidebar(activeNavKey) {
   }
 }
 
+/**
+ * 顶部导航“搜索方式”标签（书名 / 作者 / ISBN）通用绑定。
+ * 用于首页 / 图书详情页 / 店铺主页等只做原生表单跳转（非 AJAX）的页面：
+ * 点击标签只需要切换选中态、并把选中的方式写入表单内的隐藏字段 searchType，
+ * 由浏览器原生提交带到 search.html。search.html 自身的 AJAX 搜索逻辑写在 search.js 中，
+ * 不依赖这个隐藏字段，两者互不影响。
+ */
+function initHeaderSearchModeBar() {
+  document.querySelectorAll(".header-search").forEach((wrap) => {
+    const bar = wrap.querySelector(".search-mode-bar");
+    if (!bar) return;
+    const hiddenInput = wrap.querySelector('form input[name="searchType"]');
+    bar.querySelectorAll("button[data-mode]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        bar.querySelectorAll("button[data-mode]").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        if (hiddenInput) hiddenInput.value = btn.dataset.mode;
+      });
+    });
+  });
+}
+
 /* ---------- 搜索历史下拉（挂载于顶部导航搜索框） ---------- */
 function initSearchHistoryDropdown(input) {
   const wrap = input.closest(".header-search");
@@ -272,12 +296,14 @@ document.addEventListener("DOMContentLoaded", () => {
   renderHeaderAuthArea();
   refreshCartBadge();
 
-  // 书店管理员 / 后台管理员登录后不具备购买行为，全局隐藏购物车入口
+  // 书店管理员 / 后台管理员登录后不具备购买 / 参与促销的行为，全局隐藏购物车入口与顶部“促销活动”入口
   if (isAdminRole(getCurrentUser())) {
     document.querySelectorAll(".cart-link").forEach((el) => el.classList.add("hidden"));
+    document.querySelectorAll('.main-nav a[href="promotions.html"]').forEach((el) => el.classList.add("hidden"));
   }
 
   document.querySelectorAll('.header-search input[type="search"]').forEach(initSearchHistoryDropdown);
+  initHeaderSearchModeBar();
 
   // 移动端导航菜单开关（如页面包含 .nav-toggle 按钮）
   const navToggle = document.querySelector(".nav-toggle");

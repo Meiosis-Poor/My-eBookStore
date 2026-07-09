@@ -732,11 +732,19 @@ const AdminAPI = {
         return mockDelay({ list, total: list.length });
       }
     },
-    /** 新增图书 方法：POST 路径：/admin/books 请求体：BookInfo 表 + BookItem 表字段（名称/作者/出版社/ISBN/简介/分类/价格/库存等） */
+    /**
+     * 新增图书 方法：POST 路径：/admin/books 请求体：BookInfo 表 + BookItem 表字段（名称/作者/出版社/ISBN/简介/分类/价格/库存等）
+     * 备选事件流 E-1 ISBN 重复：后端应返回非 0 的 code，例如 { code: 4001, message: "ISBN已存在，请勿重复添加" }，
+     * request() 会将其转换为 Error 抛出；调用方（admin/books.js）需 catch 后通过 err.message 弹窗提示。
+     */
     async create(payload) {
       try {
         return await request("/admin/books", { method: "POST", body: payload });
       } catch (err) {
+        if (payload.isbn && MOCK_BOOKS.some((b) => b.isbn === payload.isbn)) {
+          throw new Error("ISBN已存在，请勿重复添加");
+        }
+        console.warn("[AdminAPI.books.create] 使用模拟数据新增：", err.message);
         const category = MOCK_CATEGORIES.find((c) => String(c.categoryId) === String(payload.categoryId));
         const newBook = {
           bookItemId: Date.now(),
