@@ -20,6 +20,13 @@ def split_batches(sql: str) -> list[str]:
     return [batch.strip() for batch in GO_RE.split(sql) if batch.strip()]
 
 
+def read_text(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8-sig")
+    except UnicodeDecodeError:
+        return path.read_text(encoding="gbk")
+
+
 def table_exists(conn, table_name: str) -> bool:
     return bool(
         conn.cursor()
@@ -36,12 +43,22 @@ def execute_if_needed(conn, batch: str) -> None:
     conn.cursor().execute(batch)
 
 
+def ensure_search_history_schema(conn) -> None:
+    if not table_exists(conn, "search_history"):
+        return
+    conn.cursor().execute(
+        """
+        IF COL_LENGTH('dbo.search_history', 'keyword_embedding') IS NULL
+        BEGIN
+            ALTER TABLE search_history ADD keyword_embedding NVARCHAR(MAX) NULL
+        END
+        """
+    )
+
+
 def main() -> None:
-    sql_path = REPO_ROOT / "SQLQuery1.sql"
-    try:
-        raw = sql_path.read_text(encoding="utf-8-sig")
-    except UnicodeDecodeError:
-        raw = sql_path.read_text(encoding="gbk")
+    sql_path = REPO_ROOT / "database" / "01_buildlist.sql"
+    raw = read_text(sql_path)
     batches = split_batches(raw)
 
     with connect(database="master", autocommit=True) as master:
@@ -56,9 +73,7 @@ def main() -> None:
             if upper.startswith("CREATE DATABASE") or upper.startswith("USE "):
                 continue
             execute_if_needed(conn, batch)
-        for extra in (ROOT / "sql" / "search_history.sql",):
-            for batch in split_batches(extra.read_text(encoding="utf-8")):
-                execute_if_needed(conn, batch)
+        ensure_search_history_schema(conn)
         print("schema initialization succeeded.")
 
 

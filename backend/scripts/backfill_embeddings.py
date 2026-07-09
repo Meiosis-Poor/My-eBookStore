@@ -39,6 +39,22 @@ def main() -> None:
                 dumps(embed_text(keyword)),
                 search_id,
             )
+        try:
+            conn.cursor().execute(
+                """
+                WITH ranked AS (
+                    SELECT search_id,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY user_id
+                               ORDER BY created_time DESC, search_id DESC
+                           ) AS rn
+                    FROM search_history
+                )
+                DELETE FROM ranked WHERE rn > 5
+                """
+            )
+        except Exception:
+            pass
         print(f"backfilled {len(rows)} book embeddings and {len(search_rows)} search embeddings.")
 
 

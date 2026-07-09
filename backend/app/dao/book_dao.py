@@ -136,11 +136,24 @@ def get_similar_same_store_category(book_item_id: int, limit: int = 3) -> list[d
 
 def save_search_history(user_id: int, keyword: str, keyword_embedding: str) -> None:
     with get_conn() as conn:
-        conn.cursor().execute(
+        cursor = conn.cursor()
+        cursor.execute(
             "INSERT INTO search_history(user_id, keyword, keyword_embedding) VALUES (?, ?, ?)",
             user_id,
             keyword,
             keyword_embedding,
+        )
+        cursor.execute(
+            """
+            WITH ranked AS (
+                SELECT search_id,
+                       ROW_NUMBER() OVER (ORDER BY created_time DESC, search_id DESC) AS rn
+                FROM search_history
+                WHERE user_id = ?
+            )
+            DELETE FROM ranked WHERE rn > 5
+            """,
+            user_id,
         )
 
 
@@ -152,7 +165,7 @@ def latest_searches(user_id: int, limit: int = 5) -> list[dict[str, Any]]:
                 SELECT TOP {int(limit)} keyword, keyword_embedding AS embedding
                 FROM search_history
                 WHERE user_id = ?
-                ORDER BY created_time DESC
+                ORDER BY created_time DESC, search_id DESC
                 """,
                 user_id,
             )

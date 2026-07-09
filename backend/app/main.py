@@ -115,9 +115,7 @@ def book_detail(conn, book_item_id: int) -> dict[str, Any] | None:
     return one(conn.cursor().execute(book_select_sql("AND b.book_item_id = ?"), book_item_id))
 
 
-def sort_by_embedding(books: list[dict[str, Any]], text: str) -> list[dict[str, Any]]:
-    target = embed_text(text)
-
+def sort_by_embedding(books: list[dict[str, Any]], target: list[float]) -> list[dict[str, Any]]:
     def distance(book: dict[str, Any]) -> float:
         vec = load_embedding(book.get("embedding")) or embed_text(book.get("bookName") or "")
         return cosine_distance(target, vec)
@@ -140,7 +138,7 @@ def guess_books(conn, user_id: int | None, limit: int) -> list[dict[str, Any]]:
                 SELECT TOP 5 keyword, keyword_embedding AS embedding
                 FROM search_history
                 WHERE user_id = ?
-                ORDER BY created_time DESC
+                ORDER BY created_time DESC, search_id DESC
                 """,
                 user_id,
             )
@@ -347,10 +345,11 @@ def list_books(
     except Exception:
         search_embedding_enabled = True
     if keyword and sort == "default" and search_embedding_enabled:
-        rows = sort_by_embedding(rows, keyword)
+        keyword_embedding = embed_text(keyword)
+        rows = sort_by_embedding(rows, keyword_embedding)
         if user:
             try:
-                book_dao.save_search_history(user["user_id"], keyword, dump_embedding(embed_text(keyword)))
+                book_dao.save_search_history(user["user_id"], keyword, dump_embedding(keyword_embedding))
             except Exception:
                 pass
     items = [normalize_book(row) for row in page_slice(rows, page, pageSize)]

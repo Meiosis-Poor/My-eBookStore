@@ -275,6 +275,15 @@ CREATE TABLE browse_history(
 );
 GO
 
+CREATE TABLE search_history(
+	search_id INT PRIMARY KEY IDENTITY(1,1),
+	user_id INT NOT NULL FOREIGN KEY REFERENCES users(user_id),
+	keyword NVARCHAR(200) NOT NULL,
+	keyword_embedding NVARCHAR(MAX) NULL,
+	created_time DATETIME2 NOT NULL DEFAULT SYSDATETIME()
+);
+GO
+
 CREATE TABLE reviews(
 	review_id INT PRIMARY KEY IDENTITY(1,1),
 	user_id INT NOT NULL FOREIGN KEY REFERENCES users(user_id),

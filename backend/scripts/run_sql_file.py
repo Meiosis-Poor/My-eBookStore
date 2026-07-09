@@ -22,7 +22,7 @@ def read_text(path: Path) -> str:
 
 def main() -> None:
     if len(sys.argv) != 2:
-        raise SystemExit("Usage: python backend\\scripts\\run_sql_file.py <sql-file>")
+        raise SystemExit("Usage: python backend\\scripts\\run_sql_file.py database\\99_test_seed.sql")
     sql_path = Path(sys.argv[1])
     batches = [batch.strip() for batch in GO_RE.split(read_text(sql_path)) if batch.strip()]
     with connect(autocommit=True) as conn:
