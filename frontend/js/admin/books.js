@@ -1,6 +1,6 @@
 /**
  * admin/books.js — 后台图书管理页逻辑
- * 依赖：../api.js、../mock-data.js、../common.js、common.js（本目录）
+ * 依赖：../api.js、../common.js、common.js（本目录）
  * 对应用例：4.3.1 Book Management 图书管理
  */
 let booksCache = [];

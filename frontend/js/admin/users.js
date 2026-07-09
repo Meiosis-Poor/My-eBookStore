@@ -1,6 +1,6 @@
 /**
  * admin/users.js — 后台用户管理页逻辑
- * 依赖：../api.js、../mock-data.js、../common.js、common.js（本目录）
+ * 依赖：../api.js、../common.js、common.js（本目录）
  * 对应用例：4.3.3 User Management 用户管理
  * 说明：书店管理员仅能查看购买过本店图书的用户，并可将其加入本店黑名单；
  * 后台管理员可对全平台用户执行封禁/解封操作（对应超过10家店铺拉黑自动平台封禁的规则）。

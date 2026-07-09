@@ -1,6 +1,6 @@
 /**
  * search.js — 搜索结果页 / 分类浏览页逻辑
- * 依赖：api.js、mock-data.js、common.js
+ * 依赖：api.js、common.js
  * 对应用例：4.2.2 Browse and Search Books 图书浏览与搜索
  */
 const PAGE_SIZE = 12;

@@ -1,6 +1,6 @@
 /**
  * home.js — 首页逻辑
- * 依赖：api.js、mock-data.js、common.js
+ * 依赖：api.js、common.js
  * 对应接口：BookAPI.listCategories()、BookAPI.recommended()（4.2.2 图书浏览与搜索流程）
  */
 document.addEventListener("DOMContentLoaded", async () => {

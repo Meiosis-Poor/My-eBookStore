@@ -1,6 +1,6 @@
 /**
  * admin/stores.js — 后台店铺管理页逻辑（仅后台管理员可访问）
- * 依赖：../api.js、../mock-data.js、../common.js、common.js（本目录）
+ * 依赖：../api.js、../common.js、common.js（本目录）
  * 对应用例：3.1 用户需求 2.3 后台管理员需求 —— 全平台店铺管理（开放/封禁店铺）
  */
 function renderStoresTable(list) {

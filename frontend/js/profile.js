@@ -1,6 +1,6 @@
 /**
  * profile.js — 个人中心（我的资料）页面逻辑
- * 依赖：api.js、mock-data.js、common.js
+ * 依赖：api.js、common.js
  */
 document.addEventListener("DOMContentLoaded", async () => {
   await initAccountSidebar("profile");
@@ -15,6 +15,30 @@ document.addEventListener("DOMContentLoaded", async () => {
   form.nickname.value = user.nickname || "";
   form.phone.value = user.phone || "";
   form.email.value = user.email || "";
+
+  try {
+    const records = await UserAPI.points({ page: 1, pageSize: 20 });
+    const list = document.getElementById("pointsRecordList");
+    const rows = Array.isArray(records) ? records : records.list || [];
+    list.innerHTML = rows.length
+      ? rows
+          .map(
+            (record) => `
+        <div class="order-item-row">
+          <div style="flex:1">
+            <div style="font-weight:600">${record.reason || "积分变动"}</div>
+            <div class="text-muted" style="font-size:12px">${formatDate(record.createdTime)}</div>
+          </div>
+          <div style="font-weight:700;color:${Number(record.pointsChange) >= 0 ? "var(--color-success)" : "var(--color-danger)"}">
+            ${Number(record.pointsChange) >= 0 ? "+" : ""}${record.pointsChange}
+          </div>
+        </div>`
+          )
+          .join("")
+      : '<div class="empty-state">暂无积分流水</div>';
+  } catch (err) {
+    showToast(err.message || "积分流水加载失败", "danger");
+  }
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();

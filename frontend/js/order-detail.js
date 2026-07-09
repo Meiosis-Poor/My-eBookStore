@@ -1,6 +1,6 @@
 /**
  * order-detail.js — 订单详情页逻辑
- * 依赖：api.js、mock-data.js、common.js
+ * 依赖：api.js、common.js
  * 对应用例：4.2.5 Query Orders（订单详情部分）
  */
 document.addEventListener("DOMContentLoaded", async () => {
@@ -20,6 +20,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("orderReceiverPhone").textContent = order.receiverPhone ? maskPhone(order.receiverPhone) : "";
   document.getElementById("orderReceiverAddress").textContent = order.receiverAddress || "-";
 
+  const canReview = ["completed", "shipped"].includes(order.orderStatus) || order.paymentStatus === "paid";
   document.getElementById("orderItemList").innerHTML = order.items
     .map(
       (it) => `
@@ -28,11 +29,54 @@ document.addEventListener("DOMContentLoaded", async () => {
       <div style="flex:1">
         <div style="font-weight:600">${it.bookName}</div>
         <div class="text-muted" style="font-size:12px">${formatPrice(it.unitPrice)} × ${it.quantity}</div>
+        ${
+          canReview
+            ? `<form class="review-form mt-3" data-book-item-id="${it.bookItemId}">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">评分</label>
+                    <select class="form-control" name="rating">
+                      <option value="5">5 分</option>
+                      <option value="4">4 分</option>
+                      <option value="3">3 分</option>
+                      <option value="2">2 分</option>
+                      <option value="1">1 分</option>
+                    </select>
+                  </div>
+                  <div class="form-group" style="flex:2">
+                    <label class="form-label">评价</label>
+                    <input class="form-control" name="content" maxlength="500" placeholder="写下这本书的阅读体验" />
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-outline btn-sm">提交评价</button>
+              </form>`
+            : ""
+        }
       </div>
       <div>${formatPrice(it.unitPrice * it.quantity)}</div>
     </div>`
     )
     .join("");
+
+  document.querySelectorAll(".review-form").forEach((form) => {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = form.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      try {
+        await OrderAPI.submitReview(order.orderId, {
+          bookItemId: form.dataset.bookItemId,
+          rating: Number(form.rating.value),
+          content: form.content.value.trim(),
+        });
+        showToast("评价已提交", "success");
+        setTimeout(() => window.location.reload(), 600);
+      } catch (err) {
+        showToast(err.message || "提交评价失败", "danger");
+        btn.disabled = false;
+      }
+    });
+  });
 
   const actionBar = document.getElementById("orderActionBar");
   if (order.orderStatus === "pending_payment") {

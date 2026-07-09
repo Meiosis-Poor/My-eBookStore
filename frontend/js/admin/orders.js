@@ -1,6 +1,6 @@
 /**
  * admin/orders.js — 后台订单管理页逻辑
- * 依赖：../api.js、../mock-data.js、../common.js、common.js（本目录）
+ * 依赖：../api.js、../common.js、common.js（本目录）
  * 对应用例：4.3.2 Order Management 订单管理
  */
 let adminOrdersCache = [];

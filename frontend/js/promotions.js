@@ -1,6 +1,6 @@
 /**
  * promotions.js — 促销活动页逻辑
- * 依赖：api.js、mock-data.js、common.js
+ * 依赖：api.js、common.js
  * 对应用例：4.2.6 Promotion Activities 促销活动
  */
 let currentUser = null;

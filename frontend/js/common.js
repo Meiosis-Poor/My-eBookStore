@@ -84,20 +84,24 @@ function requireLogin(message = "请先登录后再进行该操作") {
 }
 
 /* ---------- 购物车角标 ---------- */
-function getLocalCartCount() {
-  try {
-    const cart = JSON.parse(localStorage.getItem("ebs_cart") || "[]");
-    return cart.reduce((sum, item) => sum + (item.quantity || 0), 0);
-  } catch (err) {
-    return 0;
-  }
-}
-function refreshCartBadge() {
+async function refreshCartBadge() {
   const badge = document.getElementById("cartBadge");
   if (!badge) return;
-  const count = getLocalCartCount();
-  badge.textContent = count > 99 ? "99+" : String(count);
-  badge.hidden = count === 0;
+  if (!getCurrentUser()) {
+    badge.textContent = "0";
+    badge.hidden = true;
+    return;
+  }
+  try {
+    const cart = await CartAPI.list();
+    const count = cart.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+    badge.textContent = count > 99 ? "99+" : String(count);
+    badge.hidden = count === 0;
+  } catch (err) {
+    badge.textContent = "0";
+    badge.hidden = true;
+    showToast(`购物车数量加载失败：${err.message}`, "danger");
+  }
 }
 document.addEventListener("cart:updated", refreshCartBadge);
 
@@ -210,7 +214,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const navToggle = document.querySelector(".nav-toggle");
   if (navToggle) {
     navToggle.addEventListener("click", () => {
-      document.querySelector(".main-nav")?.classList.toggle("is-open");
+      const nav = document.querySelector(".main-nav");
+      if (nav) nav.classList.toggle("is-open");
     });
   }
 });

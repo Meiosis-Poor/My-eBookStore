@@ -1,63 +1,78 @@
-"""
-store_dao.py — 店铺与黑名单数据访问层
-对应表：stores, store_blacklists
-"""
+"""Store data access helpers."""
+
+from __future__ import annotations
+
+from typing import Any
 
 from ..db import get_conn, many, one
 
 
-def list_stores(page=1, page_size=20):
-    """店铺列表"""
+def get_detail(store_id: int) -> dict[str, Any] | None:
     with get_conn() as conn:
-        cur = conn.cursor()
-        cur.execute("""
-            SELECT s.store_id, s.store_name, s.description, s.status, s.created_time,
-                   u.user_name AS owner_name
-            FROM stores s
-            JOIN users u ON s.user_id = u.user_id
-            ORDER BY s.store_id
-            OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
-        """, [(page-1)*page_size, page_size])
-        return many(cur)
+        return one(
+            conn.cursor().execute(
+                """
+                SELECT s.store_id AS storeId, s.store_name AS storeName, s.description,
+                       s.created_time AS createdTime, COUNT(b.book_item_id) AS bookCount,
+                       COALESCE(SUM(b.sales_count), 0) AS salesCount
+                FROM stores s
+                LEFT JOIN book_items b ON b.store_id = s.store_id AND b.status = N'在售'
+                WHERE s.store_id = ?
+                GROUP BY s.store_id, s.store_name, s.description, s.created_time
+                """,
+                store_id,
+            )
+        )
 
 
-def get_detail(store_id):
-    """店铺详情"""
-    with get_conn() as conn:
-        cur = conn.cursor()
-        cur.execute("""
-            SELECT s.*, u.user_name AS owner_name
-            FROM stores s
-            JOIN users u ON s.user_id = u.user_id
-            WHERE s.store_id = ?
-        """, [store_id])
-        return one(cur)
-
-
-def set_status(store_id, status):
-    """封禁 / 解封店铺"""
+def update_profile(store_id: int, payload: dict[str, Any]) -> None:
     with get_conn() as conn:
         conn.cursor().execute(
-            "UPDATE stores SET status = ? WHERE store_id = ?", [status, store_id])
+            "UPDATE stores SET store_name = COALESCE(?, store_name), description = COALESCE(?, description) WHERE store_id = ?",
+            payload.get("storeName"),
+            payload.get("description"),
+            store_id,
+        )
 
 
-# ─── 黑名单 ───
+def list_stores() -> list[dict[str, Any]]:
+    with get_conn() as conn:
+        return many(
+            conn.cursor().execute(
+                """
+                SELECT s.store_id AS storeId, s.store_name AS storeName,
+                       CASE WHEN s.status = N'正常' THEN 'active' ELSE 'banned' END AS status,
+                       s.created_time AS createdTime,
+                       COUNT(DISTINCT CASE WHEN b.status = N'在售' THEN b.book_item_id END) AS bookCount,
+                       COUNT(DISTINCT o.order_id) AS orderCount
+                FROM stores s
+                LEFT JOIN book_items b ON b.store_id = s.store_id
+                LEFT JOIN order_items oi ON oi.book_item_id = b.book_item_id
+                LEFT JOIN orders o ON o.order_id = oi.order_id
+                GROUP BY s.store_id, s.store_name, s.status, s.created_time
+                ORDER BY s.created_time DESC
+                """
+            )
+        )
 
-def add_to_blacklist(store_id, user_id, reason=None):
-    """书店管理员将用户加入本店黑名单"""
+
+def set_status(store_id: int, status: str) -> None:
+    with get_conn() as conn:
+        conn.cursor().execute("UPDATE stores SET status = ? WHERE store_id = ?", status, store_id)
+
+
+def add_to_blacklist(store_id: int, user_id: int, reason: str | None = None) -> int:
     with get_conn() as conn:
         conn.cursor().execute(
-            "INSERT INTO store_blacklists (store_id, user_id, reason) VALUES (?, ?, ?)",
-            [store_id, user_id, reason])
-
-
-def get_blacklist_count(user_id):
-    """查询某用户被多少家店铺拉黑"""
-    with get_conn() as conn:
-        cur = conn.cursor()
-        cur.execute("""
-            SELECT COUNT(DISTINCT store_id) AS block_count
-            FROM store_blacklists WHERE user_id = ?
-        """, [user_id])
-        row = cur.fetchone()
-        return row[0] if row else 0
+            "INSERT INTO store_blacklists(store_id, user_id, reason) VALUES (?, ?, ?)",
+            store_id,
+            user_id,
+            reason,
+        )
+        count = conn.cursor().execute(
+            "SELECT COUNT(DISTINCT store_id) FROM store_blacklists WHERE user_id = ?",
+            user_id,
+        ).fetchval()
+        if int(count or 0) > 10:
+            conn.cursor().execute("UPDATE users SET status = N'封禁' WHERE user_id = ?", user_id)
+        return int(count or 0)

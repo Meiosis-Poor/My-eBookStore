@@ -1,6 +1,6 @@
 /**
  * admin/store-profile.js — 后台“店铺信息设置”页逻辑（仅书店管理员可访问）
- * 依赖：../api.js、../mock-data.js、../common.js、common.js（本目录）
+ * 依赖：../api.js、../common.js、common.js（本目录）
  * 说明：书店管理员在此维护本店的展示信息（店铺名称、简介），
  * 该信息即为客户端 store.html 店铺主页展示的内容。
  */

@@ -1,6 +1,6 @@
 /**
  * cart.js — 购物车页面逻辑
- * 依赖：api.js、mock-data.js、common.js
+ * 依赖：api.js、common.js
  * 对应用例：4.2.3 Add Book to Cart（购物车管理部分）
  */
 let cartItems = [];
@@ -9,7 +9,7 @@ let selectedIds = new Set();
 function groupByStore(items) {
   const map = new Map();
   items.forEach((item) => {
-    const storeName = (item.book && item.book.storeName) || "未知店铺";
+    const storeName = item.book.storeName;
     if (!map.has(storeName)) map.set(storeName, []);
     map.get(storeName).push(item);
   });
@@ -19,7 +19,20 @@ function groupByStore(items) {
 function calcTotal() {
   return cartItems
     .filter((item) => selectedIds.has(String(item.bookItemId)))
-    .reduce((sum, item) => sum + (item.book ? item.book.price : 0) * item.quantity, 0);
+    .reduce((sum, item) => sum + item.book.price * item.quantity, 0);
+}
+
+function validateCartItems(items) {
+  const invalid = items.find(
+    (item) =>
+      !item.book ||
+      !item.book.bookName ||
+      !item.book.storeName ||
+      typeof item.book.price !== "number"
+  );
+  if (invalid) {
+    throw new Error("购物车接口返回缺少书名、店铺名或价格，请检查后端 /api/cart 字段");
+  }
 }
 
 function renderCart() {
@@ -55,14 +68,14 @@ function renderCart() {
                 <td><input type="checkbox" class="item-checkbox" value="${item.bookItemId}" ${selectedIds.has(String(item.bookItemId)) ? "checked" : ""} /></td>
                 <td>
                   <div class="cart-product">
-                    <div class="mini-cover">${(item.book && item.book.cover) || "📘"}</div>
+                    <div class="mini-cover">${item.book.cover || "📘"}</div>
                     <div>
-                      <div style="font-weight:600">${item.book ? item.book.bookName : "商品 " + item.bookItemId}</div>
-                      <div class="text-muted" style="font-size:12px">${item.book ? item.book.author : ""}</div>
+                      <div style="font-weight:600">${item.book.bookName}</div>
+                      <div class="text-muted" style="font-size:12px">${item.book.author || ""}</div>
                     </div>
                   </div>
                 </td>
-                <td>${formatPrice(item.book ? item.book.price : 0)}</td>
+                <td>${formatPrice(item.book.price)}</td>
                 <td>
                   <div class="qty-stepper">
                     <button type="button" class="qty-minus">−</button>
@@ -70,7 +83,7 @@ function renderCart() {
                     <button type="button" class="qty-plus">＋</button>
                   </div>
                 </td>
-                <td>${formatPrice((item.book ? item.book.price : 0) * item.quantity)}</td>
+                <td>${formatPrice(item.book.price * item.quantity)}</td>
                 <td><button type="button" class="btn-text remove-item">删除</button></td>
               </tr>`
               )
@@ -157,6 +170,7 @@ function updateSummary() {
 
 async function reload() {
   cartItems = await CartAPI.list();
+  validateCartItems(cartItems);
   // 首次加载时默认全选
   if (selectedIds.size === 0) {
     cartItems.forEach((i) => selectedIds.add(String(i.bookItemId)));

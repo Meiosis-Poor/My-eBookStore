@@ -1,6 +1,6 @@
 /**
  * admin/promotions.js — 后台促销活动管理页逻辑
- * 依赖：../api.js、../mock-data.js、../common.js、common.js（本目录）
+ * 依赖：../api.js、../common.js、common.js（本目录）
  * 对应用例：4.3.5 Promotion Activity Management 促销活动管理
  * 说明：
  * - 书店管理员：可选择是否参与活动、设置参与书目、设置店铺代金券金额与数量。
@@ -18,8 +18,8 @@ function activityCardHtml(a, role) {
       </label>
       <div class="form-row mt-2">
         <div class="form-group">
-          <label class="form-label">参与书目（ISBN，逗号分隔）</label>
-          <input type="text" class="form-control participate-books" placeholder="如：978-7-100001, 978-7-100002" />
+          <label class="form-label">参与书目（ISBN 或商品 ID，逗号分隔）</label>
+          <input type="text" class="form-control participate-books" placeholder="如：978-7-100001, 1001" />
         </div>
         <div class="form-group">
           <label class="form-label">店铺券金额/数量</label>
@@ -75,6 +75,7 @@ async function loadActivities(role) {
       };
       await AdminAPI.promotions.setStoreParticipation(btn.dataset.id, payload);
       showToast("促销活动设置成功", "success");
+      loadActivities(role);
     });
   });
 
@@ -150,7 +151,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  document.getElementById("addActivityBtn")?.addEventListener("click", () => openActivityModal(null));
+  const addActivityBtn = document.getElementById("addActivityBtn");
+  if (addActivityBtn) addActivityBtn.addEventListener("click", () => openActivityModal(null));
   document.getElementById("activityForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const form = e.target;
@@ -168,7 +170,8 @@ document.addEventListener("DOMContentLoaded", () => {
     loadActivities(user.userType);
   });
 
-  document.getElementById("platformCouponForm")?.addEventListener("submit", async (e) => {
+  const platformCouponForm = document.getElementById("platformCouponForm");
+  if (platformCouponForm) platformCouponForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const form = e.target;
     await AdminAPI.promotions.savePlatformCoupon({
@@ -179,9 +182,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     showToast("平台代金券设置已保存", "success");
     form.reset();
+    loadActivities(user.userType);
   });
 
-  document.getElementById("addRewardBtn")?.addEventListener("click", () => openRewardModal(null));
+  const addRewardBtn = document.getElementById("addRewardBtn");
+  if (addRewardBtn) addRewardBtn.addEventListener("click", () => openRewardModal(null));
   document.getElementById("rewardForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const form = e.target;

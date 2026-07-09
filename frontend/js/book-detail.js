@@ -1,6 +1,6 @@
 /**
  * book-detail.js — 图书详情页逻辑
- * 依赖：api.js、mock-data.js、common.js
+ * 依赖：api.js、common.js
  * 对应用例：4.2.2 Browse and Search Books（详情部分）、4.2.3 Add Book to Cart
  */
 let currentBook = null;
@@ -80,17 +80,28 @@ function bindActions() {
     if (!requireLogin("请先登录后再购买！")) return;
     const qty = Number(document.getElementById("qtyInput").value) || 1;
     await CartAPI.add(currentBook.bookItemId, qty);
+    localStorage.setItem("ebs_checkout_items", JSON.stringify([String(currentBook.bookItemId)]));
     document.dispatchEvent(new CustomEvent("cart:updated"));
     window.location.href = "checkout.html";
   });
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const bookItemId = qs("id") || "1000";
-  const book = await BookAPI.detail(bookItemId);
-  renderDetail(book);
-  bindQtyStepper();
-  bindTabs();
-  bindActions();
-  loadSimilarBooks(bookItemId);
+  const bookItemId = qs("id");
+  if (!bookItemId) {
+    showToast("缺少图书编号，请从搜索页重新选择图书", "warning");
+    setTimeout(() => (window.location.href = "search.html"), 700);
+    return;
+  }
+  try {
+    const book = await BookAPI.detail(bookItemId);
+    renderDetail(book);
+    bindQtyStepper();
+    bindTabs();
+    bindActions();
+    loadSimilarBooks(bookItemId);
+  } catch (err) {
+    showToast(err.message || "图书详情加载失败", "danger");
+    setTimeout(() => (window.location.href = "search.html"), 900);
+  }
 });

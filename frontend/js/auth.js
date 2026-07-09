@@ -77,8 +77,11 @@ function initLoginPage() {
        * 应由后端在响应中通过 message 字段返回具体错误提示，前端 catch 后展示。
        */
       const result = await AuthAPI.login({ userName, password, role: currentRole });
-      const user = result.user || { userName, nickname: userName, userType: currentRole, level: 1, availablePoints: 0 };
-      setSession(result.token || "mock-token", user);
+      if (!result.token || !result.user) {
+        throw new Error("登录接口返回缺少 token 或用户信息");
+      }
+      const user = result.user;
+      setSession(result.token, user);
       showToast("登录成功", "success");
       setTimeout(() => redirectAfterLogin(user), 500);
     } catch (err) {

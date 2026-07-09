@@ -1,6 +1,6 @@
 /**
  * orders.js — 我的订单列表页逻辑
- * 依赖：api.js、mock-data.js、common.js
+ * 依赖：api.js、common.js
  * 对应用例：4.2.5 Query Orders 订单查询
  */
 const STATUS_TABS = [

@@ -1,6 +1,6 @@
 /**
  * checkout.js — 订单确认页逻辑
- * 依赖：api.js、mock-data.js、common.js
+ * 依赖：api.js、common.js
  * 对应用例：4.2.4 Submit Order and Payment（下单部分）
  */
 let checkoutItems = [];
@@ -114,19 +114,32 @@ function renderOrderItems() {
     .map(
       (item) => `
       <div class="order-item-row">
-        <div class="mini-cover">${(item.book && item.book.cover) || "📘"}</div>
+        <div class="mini-cover">${item.book.cover || "📘"}</div>
         <div style="flex:1">
-          <div style="font-weight:600">${item.book ? item.book.bookName : "商品"}</div>
-          <div class="text-muted" style="font-size:12px">${item.book ? item.book.storeName : ""} × ${item.quantity}</div>
+          <div style="font-weight:600">${item.book.bookName}</div>
+          <div class="text-muted" style="font-size:12px">${item.book.storeName} × ${item.quantity}</div>
         </div>
-        <div>${formatPrice((item.book ? item.book.price : 0) * item.quantity)}</div>
+        <div>${formatPrice(item.book.price * item.quantity)}</div>
       </div>`
     )
     .join("");
 }
 
 function calcSubtotal() {
-  return checkoutItems.reduce((sum, item) => sum + (item.book ? item.book.price : 0) * item.quantity, 0);
+  return checkoutItems.reduce((sum, item) => sum + item.book.price * item.quantity, 0);
+}
+
+function validateCheckoutItems(items) {
+  const invalid = items.find(
+    (item) =>
+      !item.book ||
+      !item.book.bookName ||
+      !item.book.storeName ||
+      typeof item.book.price !== "number"
+  );
+  if (invalid) {
+    throw new Error("购物车接口返回缺少书名、店铺名或价格，请检查后端 /api/cart 字段");
+  }
 }
 
 function updateSummary() {
@@ -168,6 +181,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const selectedIds = JSON.parse(localStorage.getItem("ebs_checkout_items") || "[]");
   const allCart = await CartAPI.list();
   checkoutItems = allCart.filter((item) => selectedIds.includes(String(item.bookItemId)));
+  validateCheckoutItems(checkoutItems);
 
   if (checkoutItems.length === 0) {
     showToast("购物车中暂无商品！", "warning");
@@ -251,7 +265,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         discountAmount: discount,
         actualAmount: Math.max(0, subtotal - discount),
       });
-      selectedIds.forEach((id) => CartAPI.remove(id));
       localStorage.removeItem("ebs_checkout_items");
       window.location.href = `payment.html?orderId=${order.orderId}&amount=${order.actualAmount}&orderNo=${order.orderNo}`;
     } catch (err) {

@@ -50,4 +50,4 @@ def normalize_value(value: Any) -> Any:
 
 
 def execute_scalar(conn: pyodbc.Connection, sql: str, *params: Any) -> Any:
-    return conn.cursor().execute(sql, params).fetchval()
+    return conn.cursor().execute(sql, *params).fetchval()
