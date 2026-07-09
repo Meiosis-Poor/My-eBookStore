@@ -1,13 +1,13 @@
-from backend.app.embedding import cosine_distance, embed_text
+from backend.app.embedding import _embed_text_fallback, cosine_distance
 
 
 def test_embedding_fallback_is_deterministic() -> None:
-    first = embed_text("算法导论")
-    second = embed_text("算法导论")
+    first = _embed_text_fallback("算法导论")
+    second = _embed_text_fallback("算法导论")
     assert first == second
     assert len(first) == 64
 
 
 def test_cosine_distance_identity_is_zero() -> None:
-    vec = embed_text("三体")
+    vec = _embed_text_fallback("三体")
     assert abs(cosine_distance(vec, vec)) < 1e-9
