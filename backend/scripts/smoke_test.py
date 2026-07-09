@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 from uuid import uuid4
 from pathlib import Path
+from time import perf_counter
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT.parent))
@@ -123,6 +124,7 @@ def main() -> None:
         "order create",
     )["data"]
     assert order["orderId"]
+    pay_started = perf_counter()
     payment = assert_ok(
         client.post(
             f"/api/orders/{order['orderId']}/pay",
@@ -131,10 +133,23 @@ def main() -> None:
         ),
         "order pay",
     )["data"]
+    assert perf_counter() - pay_started < 8
     assert payment["paymentStatus"] == "success"
     assert payment["order"]["orderStatus"] == "completed"
     assert payment["order"]["paymentStatus"] == "paid"
     assert payment["order"]["items"][0]["storeName"]
+    pay_retry_started = perf_counter()
+    repeat_payment = assert_ok(
+        client.post(
+            f"/api/orders/{order['orderId']}/pay",
+            json={"paymentMethod": "wechat"},
+            headers=auth(temp_token),
+        ),
+        "order pay idempotent retry",
+    )["data"]
+    assert perf_counter() - pay_retry_started < 8
+    assert repeat_payment["paymentStatus"] == "success"
+    assert repeat_payment["order"]["paymentStatus"] == "paid"
     points = assert_ok(client.get("/api/users/me/points", headers=auth(temp_token)), "points records")["data"]
     assert points["total"] >= 1
     assert_ok(

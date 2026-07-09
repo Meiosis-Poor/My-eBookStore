@@ -4,10 +4,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
+import pyodbc
 from fastapi import APIRouter, Body, Depends, FastAPI, Query, Response
 from fastapi.exceptions import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from starlette.responses import FileResponse
+from starlette.types import Scope
 
 from .config import settings
 from .embedding import cosine_distance, dumps as dump_embedding, embed_text, loads as load_embedding
@@ -36,6 +39,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 api = APIRouter(prefix=settings.api_prefix)
+
+
+class FrontendStaticFiles(StaticFiles):
+    @staticmethod
+    def _is_no_cache_asset(path: str) -> bool:
+        return bool(path)
+
+    @staticmethod
+    def _set_no_cache_headers(headers: Any) -> None:
+        for key in ("cache-control", "etag", "last-modified"):
+            if key in headers:
+                del headers[key]
+        headers["cache-control"] = "no-store, max-age=0"
+        headers["pragma"] = "no-cache"
+        headers["expires"] = "0"
+
+    def file_response(self, full_path: Any, stat_result: Any, scope: Scope, status_code: int = 200) -> Response:
+        if self._is_no_cache_asset(str(full_path)):
+            response = FileResponse(full_path, status_code=status_code, stat_result=stat_result)
+            self._set_no_cache_headers(response.headers)
+            return response
+        return super().file_response(full_path, stat_result, scope, status_code)
 
 
 STATUS_TO_DB = {"active": "正常", "banned": "封禁", "completed": "已完成", "cancelled": "已取消", "refunded": "已退款"}
@@ -175,45 +200,45 @@ def categories() -> dict[str, Any]:
 @api.get("/books")
 def list_books(
     keyword: Optional[str] = None,
+    searchType: str = "title",
     categoryId: Optional[int] = None,
     sort: str = "default",
     page: int = 1,
     pageSize: int = 12,
     inStockOnly: Optional[int] = None,
-    user: Optional[dict[str, Any]] = Depends(optional_user),
 ) -> dict[str, Any]:
-    where = []
-    params: list[Any] = []
-    if categoryId:
-        where.append("AND bc.category_id = ?")
-        params.append(categoryId)
-    if inStockOnly:
-        where.append("AND b.stock > 0")
-    if keyword and sort != "default":
-        where.append("AND (bi.book_name LIKE ? OR bi.author LIKE ? OR bi.ISBN LIKE ?)")
-        like = f"%{keyword}%"
-        params.extend([like, like, like])
-    order = ""
-    if sort == "sales":
-        order = "ORDER BY b.sales_count DESC"
-    elif sort == "price_asc":
-        order = "ORDER BY b.price ASC"
-    elif sort == "price_desc":
-        order = "ORDER BY b.price DESC"
+    search_type = searchType if searchType in {"title", "author", "isbn"} else "title"
     rows = book_dao.list_books(
         keyword=keyword,
+        search_type=search_type,
         category_id=categoryId,
         sort=sort,
         in_stock_only=bool(inStockOnly),
     )
     search_embedding_enabled = stats_dao.recommendation_settings().get("searchEmbeddingEnabled", True)
-    if keyword and sort == "default" and search_embedding_enabled:
+    if search_type == "title" and keyword and sort == "default" and search_embedding_enabled:
         keyword_embedding = embed_text(keyword)
         rows = sort_by_embedding(rows, keyword_embedding)
-        if user:
-            book_dao.save_search_history(user["user_id"], keyword, dump_embedding(keyword_embedding))
     items = [normalize_book(row) for row in page_slice(rows, page, pageSize)]
     return ok({"list": items, "total": len(rows)})
+
+
+@api.get("/search/history")
+def search_history(user: Optional[dict[str, Any]] = Depends(optional_user)) -> dict[str, Any]:
+    if not user:
+        return ok([])
+    return ok(book_dao.latest_search_keywords(user["user_id"], 5))
+
+
+@api.post("/search/history")
+def record_search_history(
+    payload: dict[str, Any] = Body(...),
+    user: Optional[dict[str, Any]] = Depends(optional_user),
+) -> dict[str, Any]:
+    keyword = (payload.get("keyword") or "").strip()
+    if user and keyword:
+        book_dao.save_search_history(user["user_id"], keyword, dump_embedding(embed_text(keyword)))
+    return ok({"ok": True})
 
 
 @api.get("/books/recommended")
@@ -400,6 +425,8 @@ def order_pay(orderId: int, payload: dict[str, Any] = Body(...), user: dict[str,
         data = order_dao.pay(user["user_id"], orderId, payload.get("paymentMethod") or "alipay")
     except ValueError as exc:
         fail(str(exc), 404 if "不存在" in str(exc) else 400)
+    except pyodbc.Error:
+        fail("支付处理失败，请稍后重试", 500)
     return ok(data)
 
 
@@ -541,13 +568,18 @@ def admin_book_create(payload: dict[str, Any] = Body(...), user: dict[str, Any] 
     if not store_id:
         fail("缂哄皯搴楅摵淇℃伅")
     require_store_owner(user, store_id)
-    book_item_id = book_dao.create_book(
-        {
-            **payload,
-            "embedding": dump_embedding(embed_text(payload.get("bookName") or "")),
-        },
-        {"storeId": store_id, "price": payload.get("price"), "stock": payload.get("stock")},
-    )
+    try:
+        book_item_id = book_dao.create_book(
+            {
+                **payload,
+                "embedding": dump_embedding(embed_text(payload.get("bookName") or "")),
+            },
+            {"storeId": store_id, "price": payload.get("price"), "stock": payload.get("stock")},
+        )
+    except ValueError as exc:
+        fail(str(exc), 400)
+    except pyodbc.Error:
+        fail("图书保存失败，请稍后重试", 500)
     return ok({"ok": True, "bookItemId": book_item_id})
 
 
@@ -717,4 +749,4 @@ app.include_router(api)
 
 frontend_dir = Path(__file__).resolve().parents[2] / "frontend"
 if frontend_dir.exists():
-    app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
+    app.mount("/", FrontendStaticFiles(directory=frontend_dir, html=True), name="frontend")

@@ -4,7 +4,12 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
+import pyodbc
+
 from ..db import get_conn, many, one
+
+
+DuplicateISBNMessage = "ISBN已存在，请检查后重新输入"
 
 
 BOOK_SELECT = """
@@ -54,6 +59,7 @@ def list_categories() -> list[dict[str, Any]]:
 
 def list_books(
     keyword: Optional[str] = None,
+    search_type: str = "title",
     category_id: Optional[int] = None,
     sort: str = "default",
     in_stock_only: bool = False,
@@ -69,10 +75,14 @@ def list_books(
         params.append(store_id)
     if in_stock_only:
         where.append("AND b.stock > 0")
-    if keyword and sort != "default":
-        where.append("AND (bi.book_name LIKE ? OR bi.author LIKE ? OR bi.ISBN LIKE ?)")
-        like = f"%{keyword}%"
-        params.extend([like, like, like])
+    if keyword:
+        mode = (search_type or "title").lower()
+        if mode == "author":
+            where.append("AND bi.author LIKE ?")
+            params.append(f"%{keyword}%")
+        elif mode == "isbn":
+            where.append("AND bi.ISBN = ?")
+            params.append(keyword)
 
     order = {
         "sales": "ORDER BY b.sales_count DESC, b.book_item_id DESC",
@@ -172,29 +182,56 @@ def latest_searches(user_id: int, limit: int = 5) -> list[dict[str, Any]]:
         )
 
 
+def latest_search_keywords(user_id: int, limit: int = 5) -> list[str]:
+    rows = latest_searches(user_id, limit)
+    return [str(row["keyword"]) for row in rows if row.get("keyword")]
+
+
+def _clean_text(value: Any) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def _is_duplicate_isbn_error(exc: pyodbc.Error) -> bool:
+    message = " ".join(str(part) for part in getattr(exc, "args", ()))
+    return "book_infos" in message and ("UNIQUE" in message or "重复键" in message or "duplicate" in message.lower())
+
+
 def create_book(book_info_data: dict[str, Any], book_item_data: dict[str, Any]) -> int:
     with get_conn() as conn:
-        info_id = int(
-            conn.cursor()
-            .execute(
-                """
-                INSERT INTO book_infos(category_id, book_name, author, publisher, ISBN, publish_date,
-                                       description, cover_image, embedding)
-                OUTPUT INSERTED.book_info_id
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                book_info_data["categoryId"],
-                book_info_data["bookName"],
-                book_info_data["author"],
-                book_info_data.get("publisher"),
-                book_info_data.get("isbn"),
-                book_info_data.get("publishDate"),
-                book_info_data.get("description"),
-                book_info_data.get("cover") or "📘",
-                book_info_data.get("embedding"),
+        isbn = _clean_text(book_info_data.get("isbn"))
+        if not isbn:
+            raise ValueError("ISBN不能为空")
+        if one(conn.cursor().execute("SELECT book_info_id FROM book_infos WHERE ISBN = ?", isbn)):
+            raise ValueError(DuplicateISBNMessage)
+        try:
+            info_id = int(
+                conn.cursor()
+                .execute(
+                    """
+                    INSERT INTO book_infos(category_id, book_name, author, publisher, ISBN, publish_date,
+                                           description, cover_image, embedding)
+                    OUTPUT INSERTED.book_info_id
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    book_info_data["categoryId"],
+                    book_info_data["bookName"],
+                    book_info_data["author"],
+                    _clean_text(book_info_data.get("publisher")),
+                    isbn,
+                    book_info_data.get("publishDate"),
+                    _clean_text(book_info_data.get("description")),
+                    _clean_text(book_info_data.get("cover")) or "📘",
+                    book_info_data.get("embedding"),
+                )
+                .fetchone()[0]
             )
-            .fetchone()[0]
-        )
+        except pyodbc.IntegrityError as exc:
+            if _is_duplicate_isbn_error(exc):
+                raise ValueError(DuplicateISBNMessage) from exc
+            raise
         return int(
             conn.cursor()
             .execute(

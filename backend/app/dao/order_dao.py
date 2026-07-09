@@ -128,21 +128,37 @@ def create_from_cart(
 
 def pay(user_id: int, order_id: int, payment_method: str) -> dict[str, Any]:
     with get_conn() as conn:
-        order = one(conn.cursor().execute("SELECT * FROM orders WHERE order_id = ? AND user_id = ?", order_id, user_id))
+        cursor = conn.cursor()
+        if hasattr(cursor, "timeout"):
+            cursor.timeout = 5
+        cursor.execute("SET LOCK_TIMEOUT 5000")
+        order = one(cursor.execute("SELECT * FROM orders WHERE order_id = ? AND user_id = ?", order_id, user_id))
         if not order:
             raise ValueError("订单不存在")
+        if order["order_status"] == "已完成" or order["payment_status"] == "已支付":
+            payment = one(
+                cursor.execute(
+                    "SELECT TOP 1 payment_no AS paymentNo FROM payment_records WHERE order_id = ? ORDER BY payment_id DESC",
+                    order_id,
+                )
+            )
+            return {
+                "paymentStatus": "success",
+                "paymentNo": (payment or {}).get("paymentNo") or _order_no("PAY"),
+                "order": public_order(conn, order),
+            }
         if order["order_status"] != "待支付" or order["payment_status"] != "未支付":
             raise ValueError("订单状态异常，无法支付")
-        items = many(conn.cursor().execute("SELECT book_item_id AS bookItemId, quantity FROM order_items WHERE order_id = ?", order_id))
+        items = many(cursor.execute("SELECT book_item_id AS bookItemId, quantity FROM order_items WHERE order_id = ?", order_id))
         if not items:
             raise ValueError("订单明细为空，无法支付")
         for item in items:
-            stock = conn.cursor().execute("SELECT stock FROM book_items WHERE book_item_id = ?", item["bookItemId"]).fetchval()
+            stock = cursor.execute("SELECT stock FROM book_items WHERE book_item_id = ?", item["bookItemId"]).fetchval()
             if int(stock or 0) < int(item["quantity"]):
                 raise ValueError("部分商品库存不足，请重新下单")
         payment_no = _order_no("PAY")
         payment_id = int(
-            conn.cursor()
+            cursor
             .execute(
                 """
                 INSERT INTO payment_records(order_id, user_id, payment_no, amount, payment_method, payment_status)
@@ -158,19 +174,19 @@ def pay(user_id: int, order_id: int, payment_method: str) -> dict[str, Any]:
             .fetchone()[0]
         )
         for item in items:
-            conn.cursor().execute(
+            cursor.execute(
                 "UPDATE book_items SET stock = stock - ?, sales_count = sales_count + ? WHERE book_item_id = ?",
                 item["quantity"],
                 item["quantity"],
                 item["bookItemId"],
             )
-            conn.cursor().execute("DELETE FROM cart_items WHERE user_id = ? AND book_item_id = ?", user_id, item["bookItemId"])
-        conn.cursor().execute(
+            cursor.execute("DELETE FROM cart_items WHERE user_id = ? AND book_item_id = ?", user_id, item["bookItemId"])
+        cursor.execute(
             "UPDATE orders SET order_status = N'已完成', payment_status = N'已支付', paid_time = SYSDATETIME() WHERE order_id = ?",
             order_id,
         )
         points = max(1, int(float(order["actual_amount"] or 0)))
-        conn.cursor().execute(
+        cursor.execute(
             """
             UPDATE ordinary_users
             SET total_points = total_points + ?, available_points = available_points + ?,
@@ -189,17 +205,17 @@ def pay(user_id: int, order_id: int, payment_method: str) -> dict[str, Any]:
             points,
             user_id,
         )
-        conn.cursor().execute(
+        cursor.execute(
             "INSERT INTO points_records(user_id, points_change, reason, related_id) VALUES (?, ?, N'购买', ?)",
             user_id,
             points,
             order_id,
         )
-        conn.cursor().execute(
+        cursor.execute(
             "UPDATE payment_records SET payment_status = N'已支付', paid_time = SYSDATETIME() WHERE payment_id = ?",
             payment_id,
         )
-        updated = one(conn.cursor().execute("SELECT * FROM orders WHERE order_id = ?", order_id))
+        updated = one(cursor.execute("SELECT * FROM orders WHERE order_id = ?", order_id))
         return {"paymentStatus": "success", "paymentNo": payment_no, "order": public_order(conn, updated)}
 
 
