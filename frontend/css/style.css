@@ -64,6 +64,7 @@
 .header-search {
   flex: 1;
   max-width: 420px;
+  position: relative;
 }
 .header-search form {
   display: flex;
@@ -74,6 +75,66 @@
 }
 .header-search button {
   border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+/* 搜索方式切换（书名 / 作者 / ISBN），紧贴搜索框下方，不占用 sticky 头部高度 */
+.search-mode-bar {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  display: flex;
+  gap: 6px;
+  padding-top: 6px;
+}
+.search-mode-bar button {
+  padding: 3px 12px;
+  border-radius: 100px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-light);
+  font-size: 12px;
+}
+.search-mode-bar button.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+/* 搜索历史下拉 */
+.search-history-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-2);
+  display: none;
+  z-index: 110;
+}
+.search-history-dropdown.is-open {
+  display: block;
+}
+/* 搜索页同时存在“搜索方式”条时，历史下拉需让位到其下方，避免重叠 */
+.search-mode-bar + .search-history-dropdown {
+  top: calc(100% + 28px);
+}
+.search-history-title {
+  font-size: 12px;
+  color: var(--color-text-lighter);
+  padding: 4px 10px;
+}
+.search-history-item {
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  cursor: pointer;
+}
+.search-history-item:hover {
+  background: var(--color-primary-light);
 }
 
 .header-actions {
@@ -369,6 +430,10 @@
   gap: var(--space-2);
   font-size: 13px;
   padding: 4px 0;
+}
+.filter-option.is-disabled {
+  color: var(--color-text-lighter);
+  cursor: not-allowed;
 }
 .search-toolbar {
   display: flex;

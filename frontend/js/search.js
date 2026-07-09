@@ -6,6 +6,7 @@
 const PAGE_SIZE = 12;
 let state = {
   keyword: qs("keyword") || "",
+  searchType: qs("searchType") || "title",
   categoryId: qs("categoryId") || "",
   sort: qs("sort") || "default",
   inStockOnly: false,
@@ -42,6 +43,7 @@ async function runSearch() {
 
   const res = await BookAPI.list({
     keyword: state.keyword,
+    searchType: state.searchType,
     categoryId: state.categoryId,
     sort: state.sort,
     page: state.page,
@@ -54,6 +56,8 @@ async function runSearch() {
 
   countEl.textContent = `共找到 ${state.total} 件相关商品`;
   renderPage();
+
+  if (state.keyword) SearchAPI.record(state.keyword);
 }
 
 function renderPage() {
@@ -101,6 +105,17 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("searchTitle").textContent = state.keyword
     ? `“${state.keyword}” 的搜索结果`
     : "全部图书";
+
+  document.querySelectorAll("#searchModeBar button").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.mode === state.searchType);
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("#searchModeBar button").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      state.searchType = btn.dataset.mode;
+      state.page = 1;
+      if (state.keyword) runSearch();
+    });
+  });
 
   document.getElementById("searchForm").addEventListener("submit", (e) => {
     e.preventDefault();

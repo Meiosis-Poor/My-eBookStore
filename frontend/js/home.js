@@ -8,6 +8,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   const bookGrid = document.getElementById("recommendedGrid");
   const hotBookGrid = document.getElementById("hotBookGrid");
 
+  // 事件监听需在同步阶段立即绑定，不能等待下方几个图书接口依次 await 完成后再绑定，
+  // 否则用户在接口响应期间点击该链接会不经拦截直接跳转（浏览器默认锚点行为）。
+  document.getElementById("merchantEntryLink").addEventListener("click", (e) => {
+    if (!isAdminRole(getCurrentUser())) {
+      e.preventDefault();
+      showToast("仅管理员可访问", "warning");
+    }
+  });
+
   try {
     const categories = await BookAPI.listCategories();
     categoryNav.innerHTML =

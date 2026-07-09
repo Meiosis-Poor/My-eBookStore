@@ -8,6 +8,14 @@
  */
 let editingActivityId = null;
 let editingRewardId = null;
+/** 当前书店管理员本店有库存的图书，用于“参与书目”下拉框数据源 */
+let storeBookOptions = [];
+
+function bookOptionsHtml() {
+  return storeBookOptions
+    .map((b) => `<option value="${b.bookItemId}">${b.bookName}（ISBN ${b.isbn} · 库存${b.stock}）</option>`)
+    .join("");
+}
 
 function activityCardHtml(a, role) {
   const sellerControls = `
@@ -18,8 +26,8 @@ function activityCardHtml(a, role) {
       </label>
       <div class="form-row mt-2">
         <div class="form-group">
-          <label class="form-label">参与书目（ISBN 或商品 ID，逗号分隔）</label>
-          <input type="text" class="form-control participate-books" placeholder="如：978-7-100001, 1001" />
+          <label class="form-label">参与书目（可多选，仅列出本店有库存图书）</label>
+          <select multiple class="form-control participate-books" size="4">${bookOptionsHtml()}</select>
         </div>
         <div class="form-group">
           <label class="form-label">店铺券金额/数量</label>
@@ -52,6 +60,13 @@ function activityCardHtml(a, role) {
     </div>`;
 }
 
+/** 加载本店（当前登录书店管理员所属店铺）有库存的图书，供“参与书目”下拉框使用 */
+async function loadStoreBookOptions(user) {
+  if (user.userType !== "seller") return;
+  const res = await AdminAPI.books.list();
+  storeBookOptions = (res.list || []).filter((b) => String(b.storeId) === String(user.storeId) && b.stock > 0);
+}
+
 async function loadActivities(role) {
   const list = await AdminAPI.promotions.listActivities();
   const container = document.getElementById("adminActivityList");
@@ -69,7 +84,7 @@ async function loadActivities(role) {
       const card = btn.closest(".activity-card");
       const payload = {
         participate: card.querySelector(".participate-toggle").checked,
-        books: card.querySelector(".participate-books").value.split(",").map((s) => s.trim()).filter(Boolean),
+        bookItemIds: Array.from(card.querySelector(".participate-books").selectedOptions).map((o) => o.value),
         couponAmount: Number(card.querySelector(".coupon-amount").value) || 0,
         couponQuantity: Number(card.querySelector(".coupon-qty").value) || 0,
       };
@@ -135,10 +150,11 @@ function openRewardModal(reward) {
   openModal("rewardModal");
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const user = initAdminShell("promotions");
   if (!user) return;
 
+  await loadStoreBookOptions(user);
   loadActivities(user.userType);
   if (user.userType === "platform_admin") loadRewards();
 

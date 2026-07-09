@@ -36,6 +36,11 @@ function renderDetail(book) {
     addBtn.disabled = true;
     buyBtn.disabled = true;
   }
+  // 书店管理员 / 后台管理员不具备购买行为，隐藏“加入购物车 / 立即购买”按钮
+  if (isAdminRole(getCurrentUser())) {
+    addBtn.classList.add("hidden");
+    buyBtn.classList.add("hidden");
+  }
 }
 
 async function loadSimilarBooks(bookItemId) {
