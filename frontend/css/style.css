@@ -63,11 +63,16 @@
 
 .header-search {
   flex: 1;
-  max-width: 420px;
+  max-width: 560px;
   position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 .header-search form {
   display: flex;
+  flex: 1;
+  min-width: 0;
 }
 .header-search input {
   border-radius: var(--radius-md) 0 0 var(--radius-md);
@@ -77,22 +82,20 @@
   border-radius: 0 var(--radius-md) var(--radius-md) 0;
 }
 
-/* 搜索方式切换（书名 / 作者 / ISBN），紧贴搜索框下方，不占用 sticky 头部高度 */
+/* 搜索方式切换（书名 / 作者 / ISBN），位于搜索框右侧 */
 .search-mode-bar {
-  position: absolute;
-  top: 100%;
-  left: 0;
   display: flex;
-  gap: 6px;
-  padding-top: 6px;
+  gap: 4px;
+  flex-shrink: 0;
 }
 .search-mode-bar button {
-  padding: 3px 12px;
+  padding: 6px 10px;
   border-radius: 100px;
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   color: var(--color-text-light);
   font-size: 12px;
+  white-space: nowrap;
 }
 .search-mode-bar button.active {
   background: var(--color-primary);
@@ -100,7 +103,7 @@
   color: #fff;
 }
 
-/* 搜索历史下拉 */
+/* 搜索历史下拉，悬挂在整个搜索框（含搜索方式标签）下方 */
 .search-history-dropdown {
   position: absolute;
   top: 100%;
@@ -117,10 +120,6 @@
 }
 .search-history-dropdown.is-open {
   display: block;
-}
-/* 搜索页同时存在“搜索方式”条时，历史下拉需让位到其下方，避免重叠 */
-.search-mode-bar + .search-history-dropdown {
-  top: calc(100% + 28px);
 }
 .search-history-title {
   font-size: 12px;

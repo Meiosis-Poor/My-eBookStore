@@ -83,12 +83,17 @@ function renderAddressList() {
 }
 
 /* ---------- 收货地址：弹窗内“新增 / 编辑地址”表单视图 ---------- */
+/**
+ * 注意：.modal-footer 自身设置了 display:flex，优先级与原生 [hidden] 样式打平后会
+ * 覆盖它（作者样式表在同优先级下总是覆盖 UA 样式表），所以这里必须用 .hidden
+ * （!important）而非 hidden 属性来真正切换显隐，否则两个 footer 会同时显示。
+ */
 function showAddressListView() {
   document.getElementById("addressModalTitle").textContent = "选择收货地址";
-  document.getElementById("addressListView").hidden = false;
-  document.getElementById("addressForm").hidden = true;
-  document.getElementById("addressListFooter").hidden = false;
-  document.getElementById("addressFormFooter").hidden = true;
+  document.getElementById("addressListView").classList.remove("hidden");
+  document.getElementById("addressForm").classList.add("hidden");
+  document.getElementById("addressListFooter").classList.remove("hidden");
+  document.getElementById("addressFormFooter").classList.add("hidden");
 }
 
 function showAddressFormView(address) {
@@ -102,10 +107,10 @@ function showAddressFormView(address) {
     form.isDefault.checked = !!address.isDefault;
   }
   document.getElementById("addressModalTitle").textContent = address ? "编辑收货地址" : "新增收货地址";
-  document.getElementById("addressListView").hidden = true;
-  form.hidden = false;
-  document.getElementById("addressListFooter").hidden = true;
-  document.getElementById("addressFormFooter").hidden = false;
+  document.getElementById("addressListView").classList.add("hidden");
+  form.classList.remove("hidden");
+  document.getElementById("addressListFooter").classList.add("hidden");
+  document.getElementById("addressFormFooter").classList.remove("hidden");
 }
 
 function renderOrderItems() {

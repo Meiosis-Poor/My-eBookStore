@@ -123,14 +123,19 @@ document.addEventListener("DOMContentLoaded", () => {
      * 新增：POST /api/admin/books   修改：PUT /api/admin/books/{bookItemId}
      * 请求体字段参考 book_infos / book_items 表设计
      */
-    if (editingBookId) {
-      await AdminAPI.books.update(editingBookId, payload);
-    } else {
-      await AdminAPI.books.create(payload);
+    try {
+      if (editingBookId) {
+        await AdminAPI.books.update(editingBookId, payload);
+      } else {
+        await AdminAPI.books.create(payload);
+      }
+      showToast("图书信息操作成功", "success");
+      closeModal("bookModal");
+      loadBooks();
+    } catch (err) {
+      // 例如 ISBN 重复等业务校验错误，由 AdminAPI.books.create() 抛出，此处弹窗提示具体原因
+      showToast(err.message || "操作失败，请稍后重试！", "danger");
     }
-    showToast("图书信息操作成功", "success");
-    closeModal("bookModal");
-    loadBooks();
   });
 
   loadBooks();

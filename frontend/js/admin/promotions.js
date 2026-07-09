@@ -11,10 +11,25 @@ let editingRewardId = null;
 /** 当前书店管理员本店有库存的图书，用于“参与书目”下拉框数据源 */
 let storeBookOptions = [];
 
-function bookOptionsHtml() {
-  return storeBookOptions
-    .map((b) => `<option value="${b.bookItemId}">${b.bookName}（ISBN ${b.isbn} · 库存${b.stock}）</option>`)
-    .join("");
+/** “参与书目”自定义下拉：宽度不受限、可多选，选中项左侧打勾 */
+function bookMultiselectHtml(activityId) {
+  const optionsHtml = storeBookOptions.length
+    ? storeBookOptions
+        .map(
+          (b) => `
+      <label class="book-ms-option">
+        <input type="checkbox" value="${b.bookItemId}" />
+        <span class="book-ms-check">✓</span>
+        <span class="book-ms-text">${b.bookName}（ISBN ${b.isbn} · 库存${b.stock}）</span>
+      </label>`
+        )
+        .join("")
+    : `<div class="text-muted" style="font-size:12px;padding:8px">本店暂无有库存图书</div>`;
+  return `
+    <div class="book-multiselect" data-activity="${activityId}">
+      <button type="button" class="book-multiselect-trigger">请选择参与书目 ▾</button>
+      <div class="book-multiselect-panel">${optionsHtml}</div>
+    </div>`;
 }
 
 function activityCardHtml(a, role) {
@@ -27,7 +42,7 @@ function activityCardHtml(a, role) {
       <div class="form-row mt-2">
         <div class="form-group">
           <label class="form-label">参与书目（可多选，仅列出本店有库存图书）</label>
-          <select multiple class="form-control participate-books" size="4">${bookOptionsHtml()}</select>
+          ${bookMultiselectHtml(a.activityId)}
         </div>
         <div class="form-group">
           <label class="form-label">店铺券金额/数量</label>
@@ -84,7 +99,7 @@ async function loadActivities(role) {
       const card = btn.closest(".activity-card");
       const payload = {
         participate: card.querySelector(".participate-toggle").checked,
-        bookItemIds: Array.from(card.querySelector(".participate-books").selectedOptions).map((o) => o.value),
+        bookItemIds: Array.from(card.querySelectorAll(".book-multiselect input[type='checkbox']:checked")).map((cb) => cb.value),
         couponAmount: Number(card.querySelector(".coupon-amount").value) || 0,
         couponQuantity: Number(card.querySelector(".coupon-qty").value) || 0,
       };
@@ -92,6 +107,23 @@ async function loadActivities(role) {
       showToast("促销活动设置成功", "success");
       loadActivities(role);
     });
+  });
+
+  container.querySelectorAll(".book-multiselect").forEach((ms) => {
+    const trigger = ms.querySelector(".book-multiselect-trigger");
+    const panel = ms.querySelector(".book-multiselect-panel");
+    const updateTriggerLabel = () => {
+      const checkedCount = ms.querySelectorAll('input[type="checkbox"]:checked').length;
+      trigger.textContent = checkedCount ? `已选择 ${checkedCount} 本书 ▾` : "请选择参与书目 ▾";
+    };
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      document.querySelectorAll(".book-multiselect-panel.is-open").forEach((p) => {
+        if (p !== panel) p.classList.remove("is-open");
+      });
+      panel.classList.toggle("is-open");
+    });
+    panel.querySelectorAll('input[type="checkbox"]').forEach((cb) => cb.addEventListener("change", updateTriggerLabel));
   });
 
   container.querySelectorAll('[data-action="edit-activity"]').forEach((btn) => {
@@ -149,6 +181,13 @@ function openRewardModal(reward) {
   }
   openModal("rewardModal");
 }
+
+// 点击“参与书目”下拉框以外的区域时收起下拉面板
+document.addEventListener("click", (e) => {
+  document.querySelectorAll(".book-multiselect-panel.is-open").forEach((panel) => {
+    if (!panel.closest(".book-multiselect").contains(e.target)) panel.classList.remove("is-open");
+  });
+});
 
 document.addEventListener("DOMContentLoaded", async () => {
   const user = initAdminShell("promotions");

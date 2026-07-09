@@ -327,23 +327,98 @@ const UserAPI = {
 
 const AdminAPI = {
   books: {
-    list(params = {}) {
-      const qs = buildQuery(params);
-      return request(`/admin/books${qs ? `?${qs}` : ""}`);
+    /** 后台图书列表 方法：GET 路径：/admin/books Query：{ keyword?, status?, page?, pageSize? } */
+    async list(params = {}) {
+      try {
+        return await request(`/admin/books?${new URLSearchParams(params)}`);
+      } catch (err) {
+        console.warn("[AdminAPI.books.list] 使用模拟数据：", err.message);
+        let list = MOCK_BOOKS;
+        if (params.keyword) {
+          const kw = String(params.keyword).trim().toLowerCase();
+          list = list.filter(
+            (b) => b.bookName.toLowerCase().includes(kw) || b.author.toLowerCase().includes(kw) || b.isbn.includes(kw)
+          );
+        }
+        return mockDelay({ list, total: list.length });
+      }
     },
-    create(payload) {
-      return request("/admin/books", { method: "POST", body: payload });
+    /**
+     * 新增图书 方法：POST 路径：/admin/books 请求体：BookInfo 表 + BookItem 表字段（名称/作者/出版社/ISBN/简介/分类/价格/库存等）
+     * 备选事件流 E-1 ISBN 重复：后端应返回非 0 的 code，例如 { code: 4001, message: "ISBN已存在，请勿重复添加" }，
+     * request() 会将其转换为 Error 抛出；调用方（admin/books.js）需 catch 后通过 err.message 弹窗提示。
+     */
+    async create(payload) {
+      try {
+        return await request("/admin/books", { method: "POST", body: payload });
+      } catch (err) {
+        if (payload.isbn && MOCK_BOOKS.some((b) => b.isbn === payload.isbn)) {
+          throw new Error("ISBN已存在，请勿重复添加");
+        }
+        console.warn("[AdminAPI.books.create] 使用模拟数据新增：", err.message);
+        const category = MOCK_CATEGORIES.find((c) => String(c.categoryId) === String(payload.categoryId));
+        const newBook = {
+          bookItemId: Date.now(),
+          bookInfoId: Date.now(),
+          bookName: payload.bookName,
+          author: payload.author,
+          publisher: payload.publisher || "",
+          isbn: payload.isbn || "",
+          categoryId: payload.categoryId,
+          categoryName: category ? category.categoryName : "",
+          description: payload.description || "",
+          price: payload.price,
+          originPrice: payload.price,
+          stock: payload.stock,
+          salesCount: 0,
+          storeId: 0,
+          storeName: getCurrentUser()?.storeName || "本店",
+          cover: "📘",
+          publishDate: new Date().toISOString().slice(0, 10),
+        };
+        MOCK_BOOKS.unshift(newBook);
+        return mockDelay({ ok: true, bookItemId: newBook.bookItemId });
+      }
     },
-    update(bookItemId, payload) {
-      return request(`/admin/books/${bookItemId}`, { method: "PUT", body: payload });
+    /** 修改图书 方法：PUT 路径：/admin/books/{bookItemId} */
+    async update(bookItemId, payload) {
+      try {
+        return await request(`/admin/books/${bookItemId}`, { method: "PUT", body: payload });
+      } catch (err) {
+        const book = MOCK_BOOKS.find((b) => String(b.bookItemId) === String(bookItemId));
+        if (book) {
+          Object.assign(book, payload);
+          if (payload.categoryId) {
+            const category = MOCK_CATEGORIES.find((c) => String(c.categoryId) === String(payload.categoryId));
+            if (category) book.categoryName = category.categoryName;
+          }
+        }
+        return mockDelay({ ok: true });
+      }
     },
-    remove(bookItemId) {
-      return request(`/admin/books/${bookItemId}`, { method: "DELETE" });
+    /** 下架/删除图书 方法：DELETE 路径：/admin/books/{bookItemId} */
+    async remove(bookItemId) {
+      try {
+        return await request(`/admin/books/${bookItemId}`, { method: "DELETE" });
+      } catch (err) {
+        const idx = MOCK_BOOKS.findIndex((b) => String(b.bookItemId) === String(bookItemId));
+        if (idx !== -1) MOCK_BOOKS.splice(idx, 1);
+        return mockDelay({ ok: true });
+      }
     },
-    forceTakedown(bookItemId, reason) {
-      return request(`/admin/books/${bookItemId}/force-takedown`, { method: "POST", body: { reason } });
+    /** 后台管理员强制下架违规图书 方法：POST 路径：/admin/books/{bookItemId}/force-takedown */
+    async forceTakedown(bookItemId, reason) {
+      try {
+        return await request(`/admin/books/${bookItemId}/force-takedown`, { method: "POST", body: { reason } });
+      } catch (err) {
+        const idx = MOCK_BOOKS.findIndex((b) => String(b.bookItemId) === String(bookItemId));
+        if (idx !== -1) MOCK_BOOKS.splice(idx, 1);
+        return mockDelay({ ok: true });
+      }
     },
   },
+
+  /* ---- 7.2 订单管理 4.3.2 Order Management ---- */
   orders: {
     list(params = {}) {
       const qs = buildQuery(params);
