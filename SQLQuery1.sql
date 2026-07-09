@@ -251,7 +251,8 @@ CREATE TABLE checkin_record(
 	checkin_date DATE NOT NULL,
 	continuous_checkin_days INT NOT NULL,
 	reward_points INT NOT NULL DEFAULT 0,
-	reward_coupon_id INT NULL FOREIGN KEY REFERENCES coupons(coupon_id)
+	reward_coupon_id INT NULL FOREIGN KEY REFERENCES coupons(coupon_id),
+	CONSTRAINT UQ_checkin_user_date UNIQUE(user_id,checkin_date)
 );
 GO
 
