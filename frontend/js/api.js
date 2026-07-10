@@ -60,6 +60,11 @@ const AuthAPI = {
   async logout() {
     try {
       await request("/auth/logout", { method: "POST" });
+    } catch (err) {
+      // 退出登录请求失败（后端异常/网络问题/token 已失效等）不应阻止本地登出，
+      // 否则调用方 await AuthAPI.logout() 后续的提示与跳转代码都不会执行，
+      // 右上角登录态会停留在“已登录”外观直到用户手动刷新页面。
+      console.warn("[AuthAPI.logout] 退出登录请求失败，仍执行本地登出：", err.message);
     } finally {
       clearSession();
     }

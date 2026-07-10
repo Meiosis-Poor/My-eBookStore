@@ -38,12 +38,34 @@ function activityCardHtml(a, role) {
   const couponMinAmount = Number(a.couponMinAmount) || "";
   const couponAmount = Number(a.couponAmount) || "";
   const couponQuantity = Number(a.couponQuantity) || "";
+  /**
+   * 接口预留：后端目前只返回本店券的计划发放数量 couponQuantity，
+   * 尚未返回剩余可领取数量 couponRemainingQuantity（= 计划发放数量 - 已被用户领取数量）。
+   * 后端补齐该字段前，暂以 couponQuantity 兜底展示（视为全部剩余）。
+   */
+  const couponRemaining = a.couponRemainingQuantity != null ? Number(a.couponRemainingQuantity) : couponQuantity;
+  const issuedInfoHtml =
+    isParticipating && couponQuantity > 0
+      ? `
+      <div class="coupon-issued-info" data-role-only="seller">
+        <div class="coupon-issued-title">当前已发放代金券</div>
+        <div class="coupon-issued-stats">
+          <div class="coupon-issued-item"><span class="v">满${couponMinAmount || 0}元</span><span class="l">使用门槛</span></div>
+          <div class="coupon-issued-item"><span class="v">¥${couponAmount || 0}</span><span class="l">优惠金额</span></div>
+          <div class="coupon-issued-item"><span class="v">${couponRemaining}/${couponQuantity}</span><span class="l">剩余/总量</span></div>
+        </div>
+      </div>`
+      : `
+      <div class="coupon-issued-info coupon-issued-empty" data-role-only="seller">
+        <span class="text-muted" style="font-size:12px">本店尚未参与活动或未发放店铺券</span>
+      </div>`;
   const sellerControls = `
     <div class="mt-4" data-role-only="seller">
       <label class="flex items-center gap-2" style="font-size:13px">
         <label class="switch"><input type="checkbox" class="participate-toggle" ${isParticipating ? "checked" : ""} /><span class="slider"></span></label>
         参与本活动
       </label>
+      ${issuedInfoHtml}
       <div class="form-group mt-2">
         <label class="form-label">参与书目（可多选，仅列出本店有库存图书）</label>
         ${bookMultiselectHtml(a.activityId, a.selectedBookItemIds)}

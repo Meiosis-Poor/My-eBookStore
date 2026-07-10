@@ -527,3 +527,17 @@ textarea.form-control {
   .container { padding: 0 var(--space-4); }
   .form-row { flex-direction: column; gap: 0; }
 }
+
+/* ---------- 隐藏彩蛋：粉色主题 ---------- */
+body.pink-mode {
+  --color-primary: #ff5c9a;
+  --color-primary-dark: #e0407e;
+  --color-primary-light: #ffe3ef;
+  --color-accent: #ff8fc4;
+  --color-accent-dark: #e0407e;
+  --color-bg: #fff0f6;
+  --color-surface: #fff7fb;
+  --color-border: #ffd3e6;
+  --color-info: #ff5c9a;
+  --color-info-bg: #ffe3ef;
+}

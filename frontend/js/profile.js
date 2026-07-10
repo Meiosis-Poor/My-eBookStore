@@ -2,6 +2,28 @@
  * profile.js — 个人中心（我的资料）页面逻辑
  * 依赖：api.js、common.js
  */
+/** 会员等级所需累计积分阈值，与 database/07_triggers.sql 中 trg_AutoLevelUp 保持一致 */
+const LEVEL_POINTS_THRESHOLDS = [0, 1000, 3000, 5000, 10000];
+
+function renderLevelProgress(user) {
+  const level = Number(user.level) || 1;
+  const totalPoints = Number(user.totalPoints) || 0;
+  const maxLevel = LEVEL_POINTS_THRESHOLDS.length;
+  document.getElementById("levelProgressName").textContent = `Lv.${level}`;
+
+  if (level >= maxLevel) {
+    document.getElementById("levelProgressHint").textContent = "已达最高等级";
+    document.getElementById("levelProgressFill").style.width = "100%";
+    return;
+  }
+
+  const currentFloor = LEVEL_POINTS_THRESHOLDS[level - 1];
+  const nextFloor = LEVEL_POINTS_THRESHOLDS[level];
+  const percent = Math.max(0, Math.min(100, ((totalPoints - currentFloor) / (nextFloor - currentFloor)) * 100));
+  document.getElementById("levelProgressHint").textContent = `距离 Lv.${level + 1} 还需 ${Math.max(0, nextFloor - totalPoints)} 积分`;
+  document.getElementById("levelProgressFill").style.width = `${percent}%`;
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   await initAccountSidebar("profile");
   if (!getCurrentUser()) return;
@@ -10,6 +32,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("statLevel").textContent = `Lv.${user.level}`;
   document.getElementById("statPoints").textContent = user.availablePoints;
   document.getElementById("statCheckinDays").textContent = user.continuousCheckinDays;
+  renderLevelProgress(user);
 
   const form = document.getElementById("profileForm");
   form.nickname.value = user.nickname || "";

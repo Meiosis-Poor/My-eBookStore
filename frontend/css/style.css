@@ -263,6 +263,9 @@
   justify-content: space-between;
   gap: var(--space-6);
 }
+body.pink-mode .hero-banner {
+  background: linear-gradient(120deg, #ff5c9a 0%, #ffb3d9 100%);
+}
 .hero-banner h1 {
   font-family: var(--font-serif);
   font-size: 32px;
@@ -875,6 +878,35 @@
   font-size: 13px;
   color: var(--color-text-light);
   margin-top: 4px;
+}
+
+/* 会员等级经验条 */
+.level-progress-card { padding: var(--space-5); }
+.level-progress-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--space-3);
+}
+.level-progress-head .level-name {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+.level-progress-head .level-hint {
+  font-size: 12px;
+  color: var(--color-text-light);
+}
+.progress-track {
+  height: 10px;
+  border-radius: 100px;
+  background: var(--color-border);
+  overflow: hidden;
+}
+.progress-track .progress-fill {
+  height: 100%;
+  border-radius: 100px;
+  background: linear-gradient(90deg, var(--color-accent), var(--color-primary));
+  transition: width 0.4s ease;
 }
 
 .order-status-tabs {

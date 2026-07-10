@@ -463,6 +463,43 @@
   visibility: visible;
 }
 
+/* 促销活动管理：本店已发放代金券的门槛/金额/剩余数量展示 */
+.coupon-issued-info {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-light);
+  border: 1px dashed var(--color-accent);
+}
+.coupon-issued-title {
+  font-size: 12px;
+  color: var(--color-text-light);
+  margin-bottom: 6px;
+}
+.coupon-issued-stats {
+  display: flex;
+  gap: 20px;
+}
+.coupon-issued-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.coupon-issued-item .v {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-accent-dark);
+}
+.coupon-issued-item .l {
+  font-size: 11px;
+  color: var(--color-text-light);
+}
+.coupon-issued-empty {
+  background: transparent;
+  border-style: solid;
+  border-color: var(--color-border);
+}
+
 @media (max-width: 1100px) {
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }
   .panel-grid { grid-template-columns: 1fr; }

@@ -16,6 +16,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("orderDiscount").textContent = `- ${formatPrice(order.discountAmount)}`;
   document.getElementById("orderActual").textContent = formatPrice(order.actualAmount);
 
+  const isPaid = order.paymentStatus === "paid" || ["completed", "shipped", "refunding"].includes(order.orderStatus);
+  if (isPaid) {
+    /**
+     * 接口预留：后端目前未在订单详情中返回本次购买获得的积分 pointsEarned，
+     * 优先使用后端字段，缺失时按 backend/app/dao/order_dao.py 支付成功时的积分规则
+     * （max(1, floor(实付金额))）在前端兜底计算，仅用于展示，不作为实际积分入账依据。
+     */
+    const pointsEarned = order.pointsEarned != null ? Number(order.pointsEarned) : Math.max(1, Math.floor(Number(order.actualAmount) || 0));
+    document.getElementById("orderPointsEarned").textContent = pointsEarned;
+    document.getElementById("orderPointsEarnedLine").classList.remove("hidden");
+  }
+
   document.getElementById("orderReceiverName").textContent = order.receiverName || "-";
   document.getElementById("orderReceiverPhone").textContent = order.receiverPhone ? maskPhone(order.receiverPhone) : "";
   document.getElementById("orderReceiverAddress").textContent = order.receiverAddress || "-";

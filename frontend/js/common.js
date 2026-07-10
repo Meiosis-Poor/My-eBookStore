@@ -130,7 +130,7 @@ function renderHeaderAuthArea() {
   area.innerHTML = `
     <div class="user-chip" id="userChipTrigger">
       <div class="avatar">${(user.nickname || user.userName || "U").slice(0, 1)}</div>
-      <span>${user.nickname || user.userName}</span>
+      <span id="userChipName">${user.nickname || user.userName}</span>
       <div class="user-menu" id="userChipMenu">
         ${menuLinksHtml}
         <button type="button" data-action="logout">退出登录</button>
