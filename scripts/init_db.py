@@ -5,11 +5,10 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-REPO_ROOT = ROOT.parent
 sys.path.insert(0, str(ROOT))
 
-from app.config import settings  # noqa: E402
-from app.db import connect  # noqa: E402
+from backend.app.config import settings  # noqa: E402
+from backend.app.db import connect  # noqa: E402
 
 
 GO_RE = re.compile(r"^\s*GO\s*$", re.IGNORECASE | re.MULTILINE)
@@ -44,7 +43,7 @@ def execute_if_needed(conn, batch: str) -> None:
 
 
 def main() -> None:
-    sql_path = REPO_ROOT / "database" / "01_buildlist.sql"
+    sql_path = ROOT / "database" / "01_buildlist.sql"
     raw = read_text(sql_path)
     batches = split_batches(raw)
 

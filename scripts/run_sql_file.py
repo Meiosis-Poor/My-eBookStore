@@ -7,7 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from app.db import connect  # noqa: E402
+from backend.app.db import connect  # noqa: E402
 
 
 GO_RE = re.compile(r"^\s*GO\s*$", re.IGNORECASE | re.MULTILINE)
@@ -22,7 +22,7 @@ def read_text(path: Path) -> str:
 
 def main() -> None:
     if len(sys.argv) != 2:
-        raise SystemExit("Usage: python backend\\scripts\\run_sql_file.py database\\99_test_seed.sql")
+        raise SystemExit("Usage: python scripts\\run_sql_file.py database\\99_test_seed.sql")
     sql_path = Path(sys.argv[1])
     batches = [batch.strip() for batch in GO_RE.split(read_text(sql_path)) if batch.strip()]
     with connect(autocommit=True) as conn:

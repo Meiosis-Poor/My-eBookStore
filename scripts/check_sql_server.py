@@ -6,8 +6,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from app.config import settings  # noqa: E402
-from app.db import connect  # noqa: E402
+from backend.app.config import settings  # noqa: E402
+from backend.app.db import connect  # noqa: E402
 
 
 def main() -> None:
