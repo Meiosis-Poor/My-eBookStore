@@ -23,6 +23,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
+  // 隐藏彩蛋：连续点击右上角用户名 20 次解锁（common.js 的 renderHeaderAuthArea 在此之前已同步渲染完 authArea）
+  const usernameEl = document.getElementById("userChipName");
+  if (usernameEl) {
+    let easterEggClicks = 0;
+    let easterEggLastClickTime = 0;
+    usernameEl.addEventListener("click", () => {
+      const now = Date.now();
+      easterEggClicks = now - easterEggLastClickTime > 1500 ? 1 : easterEggClicks + 1;
+      easterEggLastClickTime = now;
+      if (easterEggClicks < 20) return;
+      easterEggClicks = 0;
+      showToast("您已解锁宋律科技", "success", 4000);
+      document.body.classList.add("pink-mode");
+      document.getElementById("heroTitle").textContent = "遇见宋律，遇见更大的大姐姐";
+      document.getElementById("heroDesc").textContent =
+        "汇聚全网优质巨大娘的海量宋律资源，涵盖中杯、大杯、超大杯等多个CUP，畅享便捷的在线变大与专属宋律科技。";
+    });
+  }
 
   try {
     const categories = await BookAPI.listCategories();
