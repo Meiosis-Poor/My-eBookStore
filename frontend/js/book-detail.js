@@ -41,6 +41,28 @@ function renderDetail(book) {
     addBtn.classList.add("hidden");
     buyBtn.classList.add("hidden");
   }
+
+  renderReviews(book.reviews || []);
+}
+
+function renderReviews(reviews) {
+  const el = document.getElementById("reviewList");
+  if (!reviews.length) {
+    el.innerHTML = "暂无评价";
+    return;
+  }
+  el.innerHTML = reviews
+    .map(
+      (r) => `
+    <div class="order-item-row">
+      <div style="flex:1">
+        <div style="font-weight:600">${escapeHtml(r.userName || "匿名用户")}<span class="text-muted" style="font-weight:400;margin-left:8px">${"★".repeat(r.rating)}${"☆".repeat(5 - r.rating)}</span></div>
+        <div class="text-muted" style="font-size:12px;margin-top:4px">${escapeHtml(r.content || "")}</div>
+        <div class="text-muted" style="font-size:12px">${formatDate(r.createdTime)}</div>
+      </div>
+    </div>`
+    )
+    .join("");
 }
 
 async function loadSimilarBooks(bookItemId) {

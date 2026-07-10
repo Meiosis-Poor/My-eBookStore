@@ -20,10 +20,12 @@ function renderAdminOrders(list) {
       <td>${o.items.length} 件商品</td>
       <td>${formatPrice(o.actualAmount)}</td>
       <td><span class="badge badge-${o.orderStatus === "completed" ? "success" : o.orderStatus === "refunding" ? "warning" : "info"}">${o.statusLabel}</span></td>
-      <td class="row-actions">
-        <button data-action="detail" data-id="${o.orderId}">查看详情</button>
-        ${o.orderStatus === "shipped" ? `<button data-action="complete" data-id="${o.orderId}">标记完成</button>` : ""}
-        ${o.orderStatus === "refunding" ? `<button data-action="approve" data-id="${o.orderId}">同意退款</button><button data-action="reject" data-id="${o.orderId}" class="danger">驳回退款</button>` : ""}
+      <td>
+        <div class="row-actions">
+          <button data-action="detail" data-id="${o.orderId}">查看详情</button>
+          ${o.orderStatus === "shipped" ? `<button data-action="complete" data-id="${o.orderId}">标记完成</button>` : ""}
+          ${o.orderStatus === "refunding" ? `<button data-action="approve" data-id="${o.orderId}">同意退款</button><button data-action="reject" data-id="${o.orderId}" class="danger">驳回退款</button>` : ""}
+        </div>
       </td>
     </tr>`
     )

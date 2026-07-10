@@ -132,16 +132,18 @@ def list_customers(keyword: str | None = None, store_id: int | None = None) -> l
 
     with get_conn() as conn:
         if store_id:
-            params = [store_id, *params]
+            params = [store_id, store_id, *params]
             return many(
                 conn.cursor().execute(
                     f"""
                     SELECT DISTINCT u.user_id AS userId, u.user_name AS userName,
                            COALESCE(ou.nickname, u.user_name) AS nickname,
                            CASE WHEN u.status = N'正常' THEN 'active' ELSE 'banned' END AS status,
-                           u.created_time AS registeredAt
+                           u.created_time AS registeredAt,
+                           CASE WHEN sb.blacklist_id IS NULL THEN CAST(0 AS BIT) ELSE CAST(1 AS BIT) END AS isBlacklisted
                     FROM users u
                     LEFT JOIN ordinary_users ou ON ou.user_id = u.user_id
+                    LEFT JOIN store_blacklists sb ON sb.user_id = u.user_id AND sb.store_id = ?
                     JOIN orders o ON o.user_id = u.user_id
                     JOIN order_items oi ON oi.order_id = o.order_id
                     JOIN book_items b ON b.book_item_id = oi.book_item_id

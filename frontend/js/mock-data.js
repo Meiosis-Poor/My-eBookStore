@@ -153,6 +153,13 @@ const MOCK_REWARDS = [
   { rewardId: 4, rewardName: "限量书签套装", rewardType: "physical", requiredPoints: 1200, requiredLevel: 3, stock: 12 },
 ];
 
+/** 图书详情页“用户评价”演示数据，供 BookAPI.detail() 在无后端时的模拟兜底使用 */
+const MOCK_REVIEWS = [
+  { bookItemId: 1000, userName: "reader_001", rating: 5, content: "经典之作，值得反复阅读。", createdTime: "2026-06-20 10:00:00" },
+  { bookItemId: 1000, userName: "reader_002", rating: 4, content: "翻译流畅，包装也很好。", createdTime: "2026-06-25 15:30:00" },
+  { bookItemId: 1002, userName: "reader_001", rating: 5, content: "科幻迷不容错过。", createdTime: "2026-07-01 09:12:00" },
+];
+
 /** 后台“店铺管理”共享的模拟数据源，供 AdminAPI.stores 读写复用，保证封禁/开放操作后再次查询时状态一致 */
 const MOCK_STORES = [
   { storeId: 100, storeName: "博文书店", status: "active", createdTime: "2025-09-01", bookCount: 128, orderCount: 542 },

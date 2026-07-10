@@ -646,6 +646,12 @@ def admin_blacklist(userId: int, payload: dict[str, Any] = Body(...), user: dict
     return ok({"ok": True})
 
 
+@api.delete("/admin/users/{userId}/blacklist")
+def admin_unblacklist(userId: int, user: dict[str, Any] = Depends(require_roles("seller"))) -> dict[str, Any]:
+    store_dao.remove_from_blacklist(user["store_id"], userId)
+    return ok({"ok": True})
+
+
 @api.put("/admin/users/{userId}/status")
 def admin_user_status(userId: int, payload: dict[str, Any] = Body(...), _: dict[str, Any] = Depends(require_roles("platform_admin"))) -> dict[str, Any]:
     user_dao.set_user_status(userId, STATUS_TO_DB.get(payload.get("status"), "正常"))

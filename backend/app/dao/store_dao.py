@@ -63,12 +63,18 @@ def set_status(store_id: int, status: str) -> None:
 
 def add_to_blacklist(store_id: int, user_id: int, reason: str | None = None) -> int:
     with get_conn() as conn:
-        conn.cursor().execute(
-            "INSERT INTO store_blacklists(store_id, user_id, reason) VALUES (?, ?, ?)",
+        existing = conn.cursor().execute(
+            "SELECT 1 FROM store_blacklists WHERE store_id = ? AND user_id = ?",
             store_id,
             user_id,
-            reason,
-        )
+        ).fetchone()
+        if not existing:
+            conn.cursor().execute(
+                "INSERT INTO store_blacklists(store_id, user_id, reason) VALUES (?, ?, ?)",
+                store_id,
+                user_id,
+                reason,
+            )
         count = conn.cursor().execute(
             "SELECT COUNT(DISTINCT store_id) FROM store_blacklists WHERE user_id = ?",
             user_id,
@@ -76,3 +82,22 @@ def add_to_blacklist(store_id: int, user_id: int, reason: str | None = None) -> 
         if int(count or 0) > 10:
             conn.cursor().execute("UPDATE users SET status = N'封禁' WHERE user_id = ?", user_id)
         return int(count or 0)
+
+
+def remove_from_blacklist(store_id: int, user_id: int) -> None:
+    with get_conn() as conn:
+        conn.cursor().execute(
+            "DELETE FROM store_blacklists WHERE store_id = ? AND user_id = ?",
+            store_id,
+            user_id,
+        )
+
+
+def is_blacklisted(store_id: int, user_id: int) -> bool:
+    with get_conn() as conn:
+        row = conn.cursor().execute(
+            "SELECT 1 FROM store_blacklists WHERE store_id = ? AND user_id = ?",
+            store_id,
+            user_id,
+        ).fetchone()
+        return bool(row)

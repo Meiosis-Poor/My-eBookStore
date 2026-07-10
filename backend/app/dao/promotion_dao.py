@@ -431,6 +431,7 @@ def set_store_participation(store_id: int, activity_id: int, payload: dict[str, 
     status = "已参与" if participate else "已退出"
     coupon_amount = float(payload.get("couponAmount") or 0)
     coupon_quantity = int(payload.get("couponQuantity") or 0)
+    coupon_min_amount = float(payload.get("couponMinAmount") or 0)
     books = payload.get("books") or []
     with get_conn() as conn:
         conn.cursor().execute(
@@ -499,21 +500,23 @@ def set_store_participation(store_id: int, activity_id: int, payload: dict[str, 
             ).fetchval()
             if existing:
                 conn.cursor().execute(
-                    "UPDATE coupons SET amount = ?, min_amount = 0, status = N'启用' WHERE coupon_id = ?",
+                    "UPDATE coupons SET amount = ?, min_amount = ?, status = N'启用' WHERE coupon_id = ?",
                     coupon_amount,
+                    coupon_min_amount,
                     existing,
                 )
             else:
                 conn.cursor().execute(
                     """
                     INSERT INTO coupons(activity_id, coupon_name, coupon_type, store_id, amount, min_amount, valid_start, valid_end, status)
-                    SELECT ?, CONCAT(s.store_name, N'活动店铺券'), N'店铺券', ?, ?, 0, a.start_time, a.end_time, N'启用'
+                    SELECT ?, CONCAT(s.store_name, N'活动店铺券'), N'店铺券', ?, ?, ?, a.start_time, a.end_time, N'启用'
                     FROM stores s CROSS JOIN promotion_activities a
                     WHERE s.store_id = ? AND a.activity_id = ?
                     """,
                     activity_id,
                     store_id,
                     coupon_amount,
+                    coupon_min_amount,
                     store_id,
                     activity_id,
                 )

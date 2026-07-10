@@ -246,6 +246,7 @@
 .data-table tbody tr:hover { background: #fafaf8; }
 .data-table .row-actions {
   display: flex;
+  align-items: center;
   gap: var(--space-3);
   white-space: nowrap;
 }
@@ -254,8 +255,13 @@
   font-size: 13px;
   color: var(--color-primary);
   font-weight: 600;
+  text-align: left;
 }
 .data-table .row-actions .danger { color: var(--color-danger); }
+/* 用户管理表格：拉黑/封禁等操作按钮长短不一，固定最小宽度避免每行看起来没对齐 */
+#usersTableBody .row-actions button {
+  min-width: 96px;
+}
 .data-table .cell-book {
   display: flex;
   align-items: center;

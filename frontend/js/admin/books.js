@@ -31,10 +31,12 @@ function renderBooksTable(list) {
       <td>${formatPrice(b.price)}</td>
       <td>${b.stock}</td>
       <td>${b.salesCount}</td>
-      <td class="row-actions">
-        <button data-action="edit" data-id="${b.bookItemId}">编辑</button>
-        <button data-action="remove" data-id="${b.bookItemId}" class="danger">下架</button>
-        <button data-action="force" data-id="${b.bookItemId}" class="danger" data-role-only="platform_admin">强制下架</button>
+      <td>
+        <div class="row-actions">
+          <button data-action="edit" data-id="${b.bookItemId}">编辑</button>
+          <button data-action="remove" data-id="${b.bookItemId}" class="danger">下架</button>
+          <button data-action="force" data-id="${b.bookItemId}" class="danger" data-role-only="platform_admin">强制下架</button>
+        </div>
       </td>
     </tr>`
     )

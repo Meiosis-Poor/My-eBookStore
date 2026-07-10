@@ -90,11 +90,15 @@
 
     <div class="detail-tabs">
       <button type="button" class="active" data-panel="panelDescription">图书简介</button>
+      <button type="button" data-panel="panelReviews">用户评价</button>
       <button type="button" data-panel="panelSimilar">相似推荐</button>
     </div>
 
     <div id="panelDescription" class="detail-panel active">
       <div class="card"><div class="card-body" id="bookDescription">加载中...</div></div>
+    </div>
+    <div id="panelReviews" class="detail-panel">
+      <div class="card"><div class="card-body" id="reviewList">暂无评价</div></div>
     </div>
     <div id="panelSimilar" class="detail-panel">
       <!-- 相似推荐：由 BookAPI.similar() 基于图书向量 embedding 相似度计算，接口预留于 api.js -->
@@ -105,6 +109,7 @@
   <footer class="site-footer">
     <div class="container footer-bottom">© 2026 My-eBookStore 网上书店系统 · 课程设计项目 9 组</div>
   </footer>
+  <script src="js/mock-data.js?v=20260710-4"></script>
   <script src="js/api.js?v=20260710-4"></script>
   <script src="js/common.js?v=20260710-4"></script>
   <script src="js/book-detail.js?v=20260710-4"></script>

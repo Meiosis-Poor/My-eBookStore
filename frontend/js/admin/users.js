@@ -20,13 +20,23 @@ function renderUsersTable(list, role) {
     <tr>
       <td>${u.nickname}（${u.userName}）</td>
       <td>${u.registeredAt}</td>
-      <td><span class="badge badge-${u.status === "active" ? "success" : "danger"}">${u.status === "active" ? "正常" : "已封禁"}</span></td>
-      <td class="row-actions">
+      <td>
         ${
           role === "platform_admin"
-            ? `<button data-action="toggle-status" data-id="${u.userId}" data-status="${u.status}" class="${u.status === "active" ? "danger" : ""}">${u.status === "active" ? "封禁账号" : "解封账号"}</button>`
-            : `<button data-action="blacklist" data-id="${u.userId}" class="danger">加入本店黑名单</button>`
+            ? `<span class="badge badge-${u.status === "active" ? "success" : "danger"}">${u.status === "active" ? "正常" : "已封禁"}</span>`
+            : `<span class="badge badge-${u.isBlacklisted ? "danger" : "success"}">${u.isBlacklisted ? "已拉黑" : "正常"}</span>`
         }
+      </td>
+      <td>
+        <div class="row-actions">
+          ${
+            role === "platform_admin"
+              ? `<button data-action="toggle-status" data-id="${u.userId}" data-status="${u.status}" class="${u.status === "active" ? "danger" : ""}">${u.status === "active" ? "封禁账号" : "解封账号"}</button>`
+              : u.isBlacklisted
+              ? `<button data-action="unblacklist" data-id="${u.userId}">解除黑名单</button>`
+              : `<button data-action="blacklist" data-id="${u.userId}" class="danger">加入本店黑名单</button>`
+          }
+        </div>
       </td>
     </tr>`
     )
@@ -45,6 +55,13 @@ function renderUsersTable(list, role) {
       blacklistTargetId = btn.dataset.id;
       document.getElementById("blacklistReason").value = "";
       openModal("blacklistModal");
+    });
+  });
+  tbody.querySelectorAll('[data-action="unblacklist"]').forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      await AdminAPI.users.removeFromStoreBlacklist(btn.dataset.id);
+      showToast("已解除本店黑名单", "success");
+      loadUsers();
     });
   });
 }

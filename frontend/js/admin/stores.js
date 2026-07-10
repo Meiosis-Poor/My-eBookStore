@@ -14,10 +14,12 @@ function renderStoresTable(list) {
       <td>${s.bookCount}</td>
       <td>${s.orderCount}</td>
       <td><span class="badge badge-${s.status === "active" ? "success" : "danger"}">${s.status === "active" ? "正常营业" : "已封禁"}</span></td>
-      <td class="row-actions">
-        <button data-action="toggle" data-id="${s.storeId}" data-status="${s.status}" class="${s.status === "active" ? "danger" : ""}">
-          ${s.status === "active" ? "封禁店铺" : "开放店铺"}
-        </button>
+      <td>
+        <div class="row-actions">
+          <button data-action="toggle" data-id="${s.storeId}" data-status="${s.status}" class="${s.status === "active" ? "danger" : ""}">
+            ${s.status === "active" ? "封禁店铺" : "开放店铺"}
+          </button>
+        </div>
       </td>
     </tr>`
     )

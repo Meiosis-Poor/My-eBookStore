@@ -39,16 +39,21 @@ function activityCardHtml(a, role) {
         <label class="switch"><input type="checkbox" class="participate-toggle" /><span class="slider"></span></label>
         参与本活动
       </label>
-      <div class="form-row mt-2">
-        <div class="form-group">
-          <label class="form-label">参与书目（可多选，仅列出本店有库存图书）</label>
-          ${bookMultiselectHtml(a.activityId)}
-        </div>
-        <div class="form-group">
-          <label class="form-label">店铺券金额/数量</label>
-          <div class="flex gap-2">
-            <input type="number" class="form-control coupon-amount" placeholder="金额" style="width:50%" />
-            <input type="number" class="form-control coupon-qty" placeholder="数量" style="width:50%" />
+      <div class="form-group mt-2">
+        <label class="form-label">参与书目（可多选，仅列出本店有库存图书）</label>
+        ${bookMultiselectHtml(a.activityId)}
+      </div>
+      <div class="form-group">
+        <label class="form-label">店铺券门槛 / 金额 / 数量</label>
+        <div class="form-row">
+          <div class="form-group">
+            <input type="number" class="form-control coupon-min-amount" placeholder="满多少可用" />
+          </div>
+          <div class="form-group">
+            <input type="number" class="form-control coupon-amount" placeholder="减多少" />
+          </div>
+          <div class="form-group">
+            <input type="number" class="form-control coupon-qty" placeholder="数量" />
           </div>
         </div>
       </div>
@@ -100,6 +105,7 @@ async function loadActivities(role) {
       const payload = {
         participate: card.querySelector(".participate-toggle").checked,
         bookItemIds: Array.from(card.querySelectorAll(".book-multiselect input[type='checkbox']:checked")).map((cb) => cb.value),
+        couponMinAmount: Number(card.querySelector(".coupon-min-amount").value) || 0,
         couponAmount: Number(card.querySelector(".coupon-amount").value) || 0,
         couponQuantity: Number(card.querySelector(".coupon-qty").value) || 0,
       };
@@ -154,7 +160,7 @@ function rewardCardRowHtml(r) {
       <td>${r.requiredPoints}</td>
       <td>Lv.${r.requiredLevel}</td>
       <td>${r.stock}</td>
-      <td class="row-actions"><button data-action="edit-reward" data-id="${r.rewardId}">编辑</button></td>
+      <td><div class="row-actions"><button data-action="edit-reward" data-id="${r.rewardId}">编辑</button></div></td>
     </tr>`;
 }
 

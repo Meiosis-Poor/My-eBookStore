@@ -146,7 +146,8 @@ const BookAPI = {
     } catch (err) {
       console.warn("[BookAPI.detail] 使用模拟数据：", err.message);
       const book = MOCK_BOOKS.find((b) => String(b.bookItemId) === String(bookItemId)) || MOCK_BOOKS[0];
-      return mockDelay(book);
+      const reviews = MOCK_REVIEWS.filter((r) => String(r.bookItemId) === String(book.bookItemId));
+      return mockDelay({ ...book, reviews });
     }
   },
 
@@ -438,6 +439,9 @@ const AdminAPI = {
     },
     addToStoreBlacklist(userId, reason) {
       return request(`/admin/users/${userId}/blacklist`, { method: "POST", body: { reason } });
+    },
+    removeFromStoreBlacklist(userId) {
+      return request(`/admin/users/${userId}/blacklist`, { method: "DELETE" });
     },
     setStatus(userId, status) {
       return request(`/admin/users/${userId}/status`, { method: "PUT", body: { status } });

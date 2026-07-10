@@ -16,6 +16,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       showToast("仅管理员可访问", "warning");
     }
   });
+  document.getElementById("footerProfileLink").addEventListener("click", (e) => {
+    if (isAdminRole(getCurrentUser())) {
+      e.preventDefault();
+      showToast("管理员账号请前往后台管理", "warning");
+    }
+  });
 
   try {
     const categories = await BookAPI.listCategories();
