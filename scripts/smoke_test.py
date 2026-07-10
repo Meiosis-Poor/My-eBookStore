@@ -150,6 +150,8 @@ def main() -> None:
     assert perf_counter() - pay_retry_started < 8
     assert repeat_payment["paymentStatus"] == "success"
     assert repeat_payment["order"]["paymentStatus"] == "paid"
+    paid_detail = assert_ok(client.get(f"/api/orders/{order['orderId']}", headers=auth(temp_token)), "paid order detail")["data"]
+    assert paid_detail["pointsEarned"] == max(1, int(float(paid_detail["actualAmount"] or 0)))
     points = assert_ok(client.get("/api/users/me/points", headers=auth(temp_token)), "points records")["data"]
     assert points["total"] >= 1
     assert_ok(

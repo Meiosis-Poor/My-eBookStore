@@ -38,7 +38,8 @@ def create_from_cart(
         rows = many(
             conn.cursor().execute(
                 f"""
-                SELECT c.book_item_id AS bookItemId, c.quantity, b.price, b.stock
+                SELECT c.book_item_id AS bookItemId, c.quantity, b.price, b.stock,
+                       b.store_id AS storeId
                 FROM cart_items c
                 JOIN book_items b ON b.book_item_id = c.book_item_id
                 WHERE c.user_id = ? AND c.book_item_id IN ({placeholders})
@@ -60,7 +61,7 @@ def create_from_cart(
             coupon = one(
                 conn.cursor().execute(
                     """
-                    SELECT c.amount, c.min_amount
+                    SELECT c.amount, c.min_amount, c.coupon_type, c.store_id
                     FROM user_coupons uc
                     JOIN coupons c ON c.coupon_id = uc.coupon_id
                     WHERE uc.user_id = ? AND c.coupon_id = ? AND uc.status = N'未使用'
@@ -75,6 +76,8 @@ def create_from_cart(
                 raise ValueError("代金券不可用")
             if total < float(coupon["min_amount"] or 0):
                 raise ValueError("订单金额未达到代金券使用门槛")
+            if coupon.get("store_id") and not any(int(row["storeId"]) == int(coupon["store_id"]) for row in rows):
+                raise ValueError("店铺代金券仅可用于对应店铺商品")
             discount = min(float(coupon["amount"] or 0), total)
         else:
             discount = min(float(discount_amount or 0), total)
@@ -240,6 +243,25 @@ def _order_items(conn, order_id: int) -> list[dict[str, Any]]:
     return rows
 
 
+def _points_earned(conn, row: dict[str, Any]) -> int:
+    if row["payment_status"] != "已支付":
+        return 0
+    return int(
+        conn.cursor()
+        .execute(
+            """
+            SELECT COALESCE(SUM(points_change), 0)
+            FROM points_records
+            WHERE user_id = ? AND related_id = ? AND reason = N'购买'
+            """,
+            row["user_id"],
+            row["order_id"],
+        )
+        .fetchval()
+        or 0
+    )
+
+
 def public_order(conn, row: dict[str, Any]) -> dict[str, Any]:
     order_to_front = {"待支付": "pending_payment", "已完成": "completed", "已取消": "cancelled", "已退款": "refunded"}
     pay_to_front = {"未支付": "unpaid", "已支付": "paid", "已退款": "refunded"}
@@ -252,6 +274,7 @@ def public_order(conn, row: dict[str, Any]) -> dict[str, Any]:
         "totalAmount": float(row["total_amount"]),
         "discountAmount": float(row["discount_amount"]),
         "actualAmount": float(row["actual_amount"]),
+        "pointsEarned": _points_earned(conn, row),
         "createdTime": str(row["created_time"]),
         "receiverName": row["receiver_name"],
         "receiverPhone": row["receiver_phone"],

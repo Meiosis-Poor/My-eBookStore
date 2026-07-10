@@ -167,6 +167,7 @@ def test_seller_create_book_duplicate_isbn_returns_business_error(monkeypatch) -
 def test_seller_activity_participation_is_saved_and_returned() -> None:
     client = TestClient(app)
     activity_id = None
+    customer_id = None
     try:
         admin_login = client.post(
             "/api/auth/login",
@@ -230,7 +231,35 @@ def test_seller_activity_participation_is_saved_and_returned() -> None:
         assert int(book_item_id) in activity["selectedBookItemIds"]
         assert activity["couponAmount"] == 5
         assert activity["couponQuantity"] == 10
+        assert activity["couponRemainingQuantity"] == 10
         assert activity["couponMinAmount"] == 20
+
+        customer_name = f"coupon_{uuid4().hex[:10]}"
+        registered = client.post(
+            "/api/auth/register/user",
+            json={"userName": customer_name, "password": "Demo123", "nickname": customer_name},
+        )
+        assert registered.status_code == 200
+        customer_id = registered.json()["data"]["userId"]
+        customer_login = client.post(
+            "/api/auth/login",
+            json={"userName": customer_name, "password": "Demo123", "role": "customer"},
+        )
+        customer_token = customer_login.json()["data"]["token"]
+        customer_headers = {"Authorization": f"Bearer {customer_token}"}
+
+        joined = client.post(f"/api/promotions/activities/{activity_id}/join", headers=customer_headers)
+        assert joined.status_code == 200
+        assert joined.json()["code"] == 0
+        coupons = client.get("/api/promotions/coupons/my?status=unused", headers=customer_headers).json()["data"]
+        coupon = next(item for item in coupons if item["couponName"].endswith("活动店铺券"))
+        assert {"couponId", "couponName", "couponType", "storeId", "storeName", "amount", "minAmount", "validStart", "validEnd", "status"} <= set(coupon)
+        assert coupon["couponType"] == "store"
+        assert str(coupon["storeId"]) == str(seller_store_id)
+
+        relisted = client.get("/api/admin/promotions/activities", headers=seller_headers)
+        activity = next(item for item in relisted.json()["data"] if item["activityId"] == activity_id)
+        assert activity["couponRemainingQuantity"] == 9
 
         exited = client.post(
             f"/api/admin/promotions/activities/{activity_id}/store-participation",
@@ -244,7 +273,15 @@ def test_seller_activity_participation_is_saved_and_returned() -> None:
     finally:
         if activity_id is not None:
             with get_conn() as conn:
+                conn.cursor().execute(
+                    "DELETE FROM user_coupons WHERE coupon_id IN (SELECT coupon_id FROM coupons WHERE activity_id = ?)",
+                    activity_id,
+                )
                 conn.cursor().execute("DELETE FROM activity_books WHERE activity_id = ?", activity_id)
                 conn.cursor().execute("DELETE FROM store_activity_participation WHERE activity_id = ?", activity_id)
                 conn.cursor().execute("DELETE FROM coupons WHERE activity_id = ?", activity_id)
                 conn.cursor().execute("DELETE FROM promotion_activities WHERE activity_id = ?", activity_id)
+        if customer_id is not None:
+            with get_conn() as conn:
+                conn.cursor().execute("DELETE FROM ordinary_users WHERE user_id = ?", customer_id)
+                conn.cursor().execute("DELETE FROM users WHERE user_id = ?", customer_id)

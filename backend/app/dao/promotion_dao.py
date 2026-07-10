@@ -62,7 +62,7 @@ def _store_participation_summary(conn: Any, store_id: int, activity_id: int) -> 
     coupon = one(
         conn.cursor().execute(
             """
-            SELECT TOP 1 min_amount AS couponMinAmount
+            SELECT TOP 1 coupon_id AS couponId, min_amount AS couponMinAmount
             FROM coupons
             WHERE store_id = ? AND activity_id = ? AND coupon_type = N'店铺券'
             ORDER BY coupon_id DESC
@@ -71,13 +71,32 @@ def _store_participation_summary(conn: Any, store_id: int, activity_id: int) -> 
             activity_id,
         )
     )
+    coupon_quantity = int(participation.get("couponQuantity") or 0) if participation else 0
+    claimed_count = 0
+    if coupon:
+        claimed_count = int(
+            conn.cursor()
+            .execute(
+                """
+                SELECT COUNT(*)
+                FROM user_coupons uc
+                JOIN coupons c ON c.coupon_id = uc.coupon_id
+                WHERE c.activity_id = ? AND c.store_id = ? AND c.coupon_type = N'店铺券'
+                """,
+                activity_id,
+                store_id,
+            )
+            .fetchval()
+            or 0
+        )
     status = participation.get("participationStatus") if participation else "未参与"
     return {
         "participate": status == "已参与",
         "participationStatus": status,
         "selectedBookItemIds": [int(row["bookItemId"]) for row in book_rows],
         "couponAmount": float(participation.get("couponAmount") or 0) if participation else 0,
-        "couponQuantity": int(participation.get("couponQuantity") or 0) if participation else 0,
+        "couponQuantity": coupon_quantity,
+        "couponRemainingQuantity": max(coupon_quantity - claimed_count, 0),
         "couponMinAmount": float(coupon.get("couponMinAmount") or 0) if coupon else 0,
     }
 
@@ -154,19 +173,21 @@ def checkin(user_id: int) -> dict[str, Any]:
 
 def list_user_coupons(user_id: int, status: str = "unused") -> list[dict[str, Any]]:
     db_status = {"unused": COUPON_UNUSED, "used": COUPON_USED, "expired": COUPON_EXPIRED}.get(status, COUPON_UNUSED)
+    extra_where = "AND c.status = N'启用' AND c.valid_end >= SYSDATETIME()" if status == "unused" else ""
     with get_conn() as conn:
         rows = many(
             conn.cursor().execute(
-                """
+                f"""
                 SELECT c.coupon_id AS couponId, c.coupon_name AS couponName,
-                       c.coupon_type AS couponType, s.store_name AS storeName,
-                       c.amount, c.min_amount AS minAmount, c.valid_end AS validEnd
+                       c.coupon_type AS couponType, c.store_id AS storeId,
+                       s.store_name AS storeName, c.amount, c.min_amount AS minAmount,
+                       c.valid_start AS validStart, c.valid_end AS validEnd,
+                       uc.status
                 FROM user_coupons uc
                 JOIN coupons c ON c.coupon_id = uc.coupon_id
                 LEFT JOIN stores s ON s.store_id = c.store_id
                 WHERE uc.user_id = ? AND uc.status = ?
-                  AND c.status = N'启用'
-                  AND c.valid_end >= SYSDATETIME()
+                  {extra_where}
                 ORDER BY c.valid_end
                 """,
                 user_id,
@@ -175,8 +196,10 @@ def list_user_coupons(user_id: int, status: str = "unused") -> list[dict[str, An
         )
     for row in rows:
         row["couponType"] = _front_coupon_type(row.get("couponType"))
+        row["storeId"] = row.get("storeId")
         row["amount"] = float(row.get("amount") or 0)
         row["minAmount"] = float(row.get("minAmount") or 0)
+        row["validStart"] = str(row.get("validStart")) if row.get("validStart") is not None else ""
         row["validEnd"] = str(row.get("validEnd")) if row.get("validEnd") is not None else ""
     return rows
 
