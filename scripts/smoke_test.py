@@ -184,8 +184,16 @@ def main() -> None:
         "weekly coupon level guard",
     )
 
-    seller_token, _ = login(client, "seller_demo", "Demo123", "seller")
-    assert_ok(client.get("/api/admin/books", headers=auth(seller_token)), "seller admin books")
+    seller_token, seller = login(client, "seller_demo", "Demo123", "seller")
+    seller_books = assert_ok(client.get("/api/admin/books", headers=auth(seller_token)), "seller admin books")["data"]["list"]
+    seller_store_id = seller.get("storeId")
+    seller_store_books = [
+        item
+        for item in seller_books
+        if str(item.get("storeId")) == str(seller_store_id) and int(item.get("stock") or 0) > 0
+    ]
+    assert seller_store_books, "Seller should have at least one in-stock book for activity participation smoke test"
+    seller_book_item_id = int(seller_store_books[0]["bookItemId"])
     assert_ok(client.get("/api/admin/orders", headers=auth(seller_token)), "seller admin orders")
     assert_ok(client.get("/api/admin/statistics/overview", headers=auth(seller_token)), "seller stats overview")
 
@@ -228,7 +236,12 @@ def main() -> None:
         assert_ok(
             client.post(
                 f"/api/admin/promotions/activities/{activity_id}/store-participation",
-                json={"participate": True, "books": [str(book_item_id)], "couponAmount": 1, "couponQuantity": 1},
+                json={
+                    "participate": True,
+                    "bookItemIds": [seller_book_item_id],
+                    "couponAmount": 1,
+                    "couponQuantity": 1,
+                },
                 headers=auth(seller_token),
             ),
             "seller activity participation",

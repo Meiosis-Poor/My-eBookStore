@@ -459,12 +459,7 @@ const AdminAPI = {
   promotions: {
     /** 活动列表（后台视角） 方法：GET 路径：/admin/promotions/activities */
     async listActivities() {
-      try {
-        return await request("/admin/promotions/activities");
-      } catch (err) {
-        console.warn("[AdminAPI.promotions.listActivities] 使用模拟数据：", err.message);
-        return mockDelay(MOCK_ACTIVITIES);
-      }
+      return request("/admin/promotions/activities");
     },
     /** 后台管理员新增/修改活动类型与内容 方法：POST /admin/promotions/activities 或 PUT /admin/promotions/activities/{id} */
     async saveActivity(activity) {
@@ -482,14 +477,10 @@ const AdminAPI = {
      * 请求体：{ participate: boolean, bookItemIds: number[]（从本店库存图书下拉框多选得到）, couponAmount, couponQuantity }
      */
     async setStoreParticipation(activityId, payload) {
-      try {
-        return await request(`/admin/promotions/activities/${activityId}/store-participation`, {
-          method: "POST",
-          body: payload,
-        });
-      } catch (err) {
-        return mockDelay({ ok: true });
-      }
+      return request(`/admin/promotions/activities/${activityId}/store-participation`, {
+        method: "POST",
+        body: payload,
+      });
     },
     /** 后台管理员设置平台代金券额度与发放数量 方法：POST 路径：/admin/promotions/coupons */
     async savePlatformCoupon(payload) {

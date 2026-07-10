@@ -671,8 +671,9 @@ def admin_store_status(storeId: int, payload: dict[str, Any] = Body(...), _: dic
 
 
 @api.get("/admin/promotions/activities")
-def admin_promo_activities(_: dict[str, Any] = Depends(require_roles("seller", "platform_admin"))) -> dict[str, Any]:
-    return ok(promotion_dao.list_activities(admin_view=True))
+def admin_promo_activities(user: dict[str, Any] = Depends(require_roles("seller", "platform_admin"))) -> dict[str, Any]:
+    store_id = user.get("store_id") if DB_TO_ROLE.get(user["user_type"]) == "seller" else None
+    return ok(promotion_dao.list_activities(admin_view=True, store_id=store_id))
 
 
 @api.post("/admin/promotions/activities")
@@ -689,8 +690,11 @@ def admin_update_activity(activityId: int, payload: dict[str, Any] = Body(...), 
 
 @api.post("/admin/promotions/activities/{activityId}/store-participation")
 def admin_store_participation(activityId: int, payload: dict[str, Any] = Body(...), user: dict[str, Any] = Depends(require_roles("seller"))) -> dict[str, Any]:
-    promotion_dao.set_store_participation(user["store_id"], activityId, payload)
-    return ok({"ok": True})
+    try:
+        participation = promotion_dao.set_store_participation(user["store_id"], activityId, payload)
+    except ValueError as exc:
+        fail(str(exc))
+    return ok({"ok": True, "participation": participation})
 
 
 @api.post("/admin/promotions/coupons")

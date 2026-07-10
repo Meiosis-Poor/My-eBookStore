@@ -12,13 +12,14 @@ let editingRewardId = null;
 let storeBookOptions = [];
 
 /** “参与书目”自定义下拉：宽度不受限、可多选，选中项左侧打勾 */
-function bookMultiselectHtml(activityId) {
+function bookMultiselectHtml(activityId, selectedBookItemIds = []) {
+  const selectedSet = new Set((selectedBookItemIds || []).map((id) => String(id)));
   const optionsHtml = storeBookOptions.length
     ? storeBookOptions
         .map(
           (b) => `
       <label class="book-ms-option">
-        <input type="checkbox" value="${b.bookItemId}" />
+        <input type="checkbox" value="${b.bookItemId}" ${selectedSet.has(String(b.bookItemId)) ? "checked" : ""} />
         <span class="book-ms-check">✓</span>
         <span class="book-ms-text">${b.bookName}（ISBN ${b.isbn} · 库存${b.stock}）</span>
       </label>`
@@ -33,27 +34,31 @@ function bookMultiselectHtml(activityId) {
 }
 
 function activityCardHtml(a, role) {
+  const isParticipating = a.participate === true || a.participationStatus === "已参与";
+  const couponMinAmount = Number(a.couponMinAmount) || "";
+  const couponAmount = Number(a.couponAmount) || "";
+  const couponQuantity = Number(a.couponQuantity) || "";
   const sellerControls = `
     <div class="mt-4" data-role-only="seller">
       <label class="flex items-center gap-2" style="font-size:13px">
-        <label class="switch"><input type="checkbox" class="participate-toggle" /><span class="slider"></span></label>
+        <label class="switch"><input type="checkbox" class="participate-toggle" ${isParticipating ? "checked" : ""} /><span class="slider"></span></label>
         参与本活动
       </label>
       <div class="form-group mt-2">
         <label class="form-label">参与书目（可多选，仅列出本店有库存图书）</label>
-        ${bookMultiselectHtml(a.activityId)}
+        ${bookMultiselectHtml(a.activityId, a.selectedBookItemIds)}
       </div>
       <div class="form-group">
         <label class="form-label">店铺券门槛 / 金额 / 数量</label>
         <div class="form-row">
           <div class="form-group">
-            <input type="number" class="form-control coupon-min-amount" placeholder="满多少可用" />
+            <input type="number" class="form-control coupon-min-amount" placeholder="满多少可用" value="${couponMinAmount}" />
           </div>
           <div class="form-group">
-            <input type="number" class="form-control coupon-amount" placeholder="减多少" />
+            <input type="number" class="form-control coupon-amount" placeholder="减多少" value="${couponAmount}" />
           </div>
           <div class="form-group">
-            <input type="number" class="form-control coupon-qty" placeholder="数量" />
+            <input type="number" class="form-control coupon-qty" placeholder="数量" value="${couponQuantity}" />
           </div>
         </div>
       </div>
@@ -130,6 +135,7 @@ async function loadActivities(role) {
       panel.classList.toggle("is-open");
     });
     panel.querySelectorAll('input[type="checkbox"]').forEach((cb) => cb.addEventListener("change", updateTriggerLabel));
+    updateTriggerLabel();
   });
 
   container.querySelectorAll('[data-action="edit-activity"]').forEach((btn) => {

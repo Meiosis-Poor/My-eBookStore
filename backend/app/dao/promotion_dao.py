@@ -33,7 +33,56 @@ def _db_reward_type(front_value: str | None) -> str:
     return {"physical": "实物", "coupon": "代金券", "virtual": "虚拟商品"}.get(front_value or "", "实物")
 
 
-def list_activities(admin_view: bool = False) -> list[dict[str, Any]]:
+def _store_participation_summary(conn: Any, store_id: int, activity_id: int) -> dict[str, Any]:
+    participation = one(
+        conn.cursor().execute(
+            """
+            SELECT participate_status AS participationStatus,
+                   coupon_amount AS couponAmount,
+                   coupon_quantity AS couponQuantity
+            FROM store_activity_participation
+            WHERE store_id = ? AND activity_id = ?
+            """,
+            store_id,
+            activity_id,
+        )
+    )
+    book_rows = many(
+        conn.cursor().execute(
+            """
+            SELECT book_item_id AS bookItemId
+            FROM activity_books
+            WHERE store_id = ? AND activity_id = ?
+            ORDER BY book_item_id
+            """,
+            store_id,
+            activity_id,
+        )
+    )
+    coupon = one(
+        conn.cursor().execute(
+            """
+            SELECT TOP 1 min_amount AS couponMinAmount
+            FROM coupons
+            WHERE store_id = ? AND activity_id = ? AND coupon_type = N'店铺券'
+            ORDER BY coupon_id DESC
+            """,
+            store_id,
+            activity_id,
+        )
+    )
+    status = participation.get("participationStatus") if participation else "未参与"
+    return {
+        "participate": status == "已参与",
+        "participationStatus": status,
+        "selectedBookItemIds": [int(row["bookItemId"]) for row in book_rows],
+        "couponAmount": float(participation.get("couponAmount") or 0) if participation else 0,
+        "couponQuantity": int(participation.get("couponQuantity") or 0) if participation else 0,
+        "couponMinAmount": float(coupon.get("couponMinAmount") or 0) if coupon else 0,
+    }
+
+
+def list_activities(admin_view: bool = False, store_id: int | None = None) -> list[dict[str, Any]]:
     where = "" if admin_view else "WHERE status IN (N'未开始', N'进行中')"
     with get_conn() as conn:
         rows = many(
@@ -51,6 +100,10 @@ def list_activities(admin_view: bool = False) -> list[dict[str, Any]]:
     for row in rows:
         row["startTime"] = str(row.get("startTime")) if row.get("startTime") is not None else ""
         row["endTime"] = str(row.get("endTime")) if row.get("endTime") is not None else ""
+    if store_id is not None:
+        with get_conn() as conn:
+            for row in rows:
+                row.update(_store_participation_summary(conn, store_id, int(row["activityId"])))
     return rows
 
 
@@ -426,14 +479,17 @@ def save_platform_coupon(payload: dict[str, Any], admin_id: int | None = None) -
         )
 
 
-def set_store_participation(store_id: int, activity_id: int, payload: dict[str, Any]) -> None:
+def set_store_participation(store_id: int, activity_id: int, payload: dict[str, Any]) -> dict[str, Any]:
     participate = bool(payload.get("participate", True))
     status = "已参与" if participate else "已退出"
     coupon_amount = float(payload.get("couponAmount") or 0)
     coupon_quantity = int(payload.get("couponQuantity") or 0)
     coupon_min_amount = float(payload.get("couponMinAmount") or 0)
-    books = payload.get("books") or []
+    books = payload.get("bookItemIds") if payload.get("bookItemIds") is not None else payload.get("books")
+    books = books or []
     with get_conn() as conn:
+        if not conn.cursor().execute("SELECT 1 FROM promotion_activities WHERE activity_id = ?", activity_id).fetchone():
+            raise ValueError("活动不存在")
         conn.cursor().execute(
             """
             MERGE store_activity_participation AS target
@@ -457,6 +513,17 @@ def set_store_participation(store_id: int, activity_id: int, payload: dict[str, 
             store_id,
             activity_id,
         )
+        if not participate:
+            conn.cursor().execute(
+                """
+                UPDATE coupons
+                SET status = N'停用'
+                WHERE activity_id = ? AND store_id = ? AND coupon_type = N'店铺券'
+                """,
+                activity_id,
+                store_id,
+            )
+            return _store_participation_summary(conn, store_id, activity_id)
         for raw in books:
             token = str(raw).strip()
             if not token:
@@ -475,7 +542,7 @@ def set_store_participation(store_id: int, activity_id: int, payload: dict[str, 
                 )
             )
             if not book:
-                continue
+                raise ValueError("参与书目不存在或不属于当前店铺")
             conn.cursor().execute(
                 """
                 INSERT INTO activity_books(store_id, activity_id, book_item_id, activity_price, discount_rate, activity_stock, status)
@@ -520,6 +587,17 @@ def set_store_participation(store_id: int, activity_id: int, payload: dict[str, 
                     store_id,
                     activity_id,
                 )
+        else:
+            conn.cursor().execute(
+                """
+                UPDATE coupons
+                SET status = N'停用'
+                WHERE activity_id = ? AND store_id = ? AND coupon_type = N'店铺券'
+                """,
+                activity_id,
+                store_id,
+            )
+        return _store_participation_summary(conn, store_id, activity_id)
 
 
 def save_reward(payload: dict[str, Any], admin_id: int, reward_id: int | None = None) -> int:

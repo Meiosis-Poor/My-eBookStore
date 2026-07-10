@@ -162,3 +162,89 @@ def test_seller_create_book_duplicate_isbn_returns_business_error(monkeypatch) -
                 isbn,
             )
             conn.cursor().execute("DELETE FROM book_infos WHERE ISBN = ?", isbn)
+
+
+def test_seller_activity_participation_is_saved_and_returned() -> None:
+    client = TestClient(app)
+    activity_id = None
+    try:
+        admin_login = client.post(
+            "/api/auth/login",
+            json={"userName": "admin", "password": "Demo123", "role": "platform_admin"},
+        )
+        assert admin_login.status_code == 200
+        admin_token = admin_login.json()["data"]["token"]
+        admin_headers = {"Authorization": f"Bearer {admin_token}"}
+
+        seller_login = client.post(
+            "/api/auth/login",
+            json={"userName": "seller_demo", "password": "Demo123", "role": "seller"},
+        )
+        assert seller_login.status_code == 200
+        seller_payload = seller_login.json()["data"]
+        seller_token = seller_payload["token"]
+        seller_store_id = seller_payload["user"]["storeId"]
+        seller_headers = {"Authorization": f"Bearer {seller_token}"}
+
+        books = client.get("/api/admin/books", headers=seller_headers).json()["data"]["list"]
+        store_books = [book for book in books if str(book.get("storeId")) == str(seller_store_id) and int(book.get("stock") or 0) > 0]
+        assert store_books
+        book_item_id = store_books[0]["bookItemId"]
+
+        activity_name = f"Participation test {uuid4().hex[:8]}"
+        created = client.post(
+            "/api/admin/promotions/activities",
+            json={
+                "activityName": activity_name,
+                "activityType": "discount",
+                "description": "participation test",
+                "startTime": "2026-07-01",
+                "endTime": "2026-12-31",
+            },
+            headers=admin_headers,
+        )
+        assert created.status_code == 200
+        activity_id = created.json()["data"]["activityId"]
+
+        saved = client.post(
+            f"/api/admin/promotions/activities/{activity_id}/store-participation",
+            json={
+                "participate": True,
+                "bookItemIds": [book_item_id],
+                "couponMinAmount": 20,
+                "couponAmount": 5,
+                "couponQuantity": 10,
+            },
+            headers=seller_headers,
+        )
+        saved_body = saved.json()
+        assert saved.status_code == 200
+        assert saved_body["code"] == 0
+        participation = saved_body["data"]["participation"]
+        assert participation["participate"] is True
+        assert int(book_item_id) in participation["selectedBookItemIds"]
+
+        listed = client.get("/api/admin/promotions/activities", headers=seller_headers)
+        activity = next(item for item in listed.json()["data"] if item["activityId"] == activity_id)
+        assert activity["participate"] is True
+        assert int(book_item_id) in activity["selectedBookItemIds"]
+        assert activity["couponAmount"] == 5
+        assert activity["couponQuantity"] == 10
+        assert activity["couponMinAmount"] == 20
+
+        exited = client.post(
+            f"/api/admin/promotions/activities/{activity_id}/store-participation",
+            json={"participate": False, "bookItemIds": []},
+            headers=seller_headers,
+        )
+        exited_body = exited.json()
+        assert exited.status_code == 200
+        assert exited_body["data"]["participation"]["participate"] is False
+        assert exited_body["data"]["participation"]["selectedBookItemIds"] == []
+    finally:
+        if activity_id is not None:
+            with get_conn() as conn:
+                conn.cursor().execute("DELETE FROM activity_books WHERE activity_id = ?", activity_id)
+                conn.cursor().execute("DELETE FROM store_activity_participation WHERE activity_id = ?", activity_id)
+                conn.cursor().execute("DELETE FROM coupons WHERE activity_id = ?", activity_id)
+                conn.cursor().execute("DELETE FROM promotion_activities WHERE activity_id = ?", activity_id)
