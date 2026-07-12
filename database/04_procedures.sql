@@ -50,10 +50,10 @@ BEGIN
 			SELECT 1 FROM @items it
 			JOIN book_items bi
 			WITH (ROWLOCK,XLOCK) ON bi.book_item_id=it.book_item_id
-			WHERE (bi.stock-bi.locked_stock)<it.quantity OR bi.status!=N'ÔÚÊÛ'
+			WHERE (bi.stock-bi.locked_stock)<it.quantity OR bi.status!=N'ï¿½ï¿½ï¿½ï¿½'
 		)
 		BEGIN
-			RAISERROR(N'²¿·ÖÊéÄ¿¿â´æ²»×ã»òÒÑÏÂ¼Ü',16,1);
+			RAISERROR(N'ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¿ï¿½ï¿½æ²»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â¼ï¿½',16,1);
 		END
 
 		DECLARE @total DECIMAL(10,2);
@@ -69,7 +69,7 @@ BEGIN
 			JOIN coupons c ON uc.coupon_id=c.coupon_id
 			WHERE uc.user_coupon_id=@coupon_id AND 
 			uc.user_id=@user_id AND 
-			uc.status=N'Î´Ê¹ÓÃ' AND 
+			uc.status=N'Î´Ê¹ï¿½ï¿½' AND 
 			c.min_amount<=@total AND 
 			SYSDATETIME() BETWEEN c.valid_start AND c.valid_end;
 			IF @discount IS NULL SET @discount=0;
@@ -86,13 +86,13 @@ BEGIN
 		WHERE address_id=@address_id AND user_id=@user_id;
 		IF @recv_name IS NULL
 		BEGIN
-			RAISERROR(N'ÎÞÊÕ»õµØÖ·',16,1);
+			RAISERROR(N'ï¿½ï¿½ï¿½Õ»ï¿½ï¿½ï¿½Ö·',16,1);
 		END
 
 		EXEC sp_GetNextSeq N'ORD',@order_no OUTPUT;
 
 		INSERT INTO orders(user_id,order_no,total_amount,discount_amount,actual_amount,order_status,payment_status,receiver_name,receiver_phone,receiver_addr)
-		VALUES(@user_id,@order_no,@total,@discount,@actual,N'´ýÖ§¸¶',N'Î´Ö§¸¶',@recv_name,@recv_phone,@recv_addr);
+		VALUES(@user_id,@order_no,@total,@discount,@actual,N'ï¿½ï¿½Ö§ï¿½ï¿½',N'Î´Ö§ï¿½ï¿½',@recv_name,@recv_phone,@recv_addr);
 		SET @order_id=SCOPE_IDENTITY();
 
 		INSERT INTO order_items(order_id,book_item_id,quantity,unit_price,subtotal)
@@ -108,7 +108,7 @@ BEGIN
 		IF @coupon_id IS NOT NULL AND @discount>0
 		BEGIN
 			UPDATE user_coupons
-			SET status=N'ÒÑÊ¹ÓÃ',used_time=SYSDATETIME(),order_id=@order_id
+			SET status=N'ï¿½ï¿½Ê¹ï¿½ï¿½',used_time=SYSDATETIME(),order_id=@order_id
 			WHERE user_coupon_id=@coupon_id;
 		END
 		DELETE ci
@@ -141,19 +141,19 @@ BEGIN
 
 		SELECT @user_id=user_id,@actual_amount=actual_amount
 		FROM orders WITH (ROWLOCK,XLOCK)
-		WHERE order_id=@order_id AND order_status=N'´ýÖ§¸¶';
+		WHERE order_id=@order_id AND order_status=N'ï¿½ï¿½Ö§ï¿½ï¿½';
 		IF @user_id IS NULL
 		BEGIN
-			RAISERROR(N'¶©µ¥×´Ì¬Òì³£',16,1);
+			RAISERROR(N'ï¿½ï¿½ï¿½ï¿½×´Ì¬ï¿½ì³£',16,1);
 		END
 		EXEC sp_GetNextSeq N'PAY',@payment_no OUTPUT;
 
 		UPDATE orders
-		SET order_status=N'ÒÑÍê³É',payment_status=N'ÒÑÖ§¸¶',paid_time=SYSDATETIME()
+		SET order_status=N'ï¿½ï¿½ï¿½ï¿½ï¿½',payment_status=N'ï¿½ï¿½Ö§ï¿½ï¿½',paid_time=SYSDATETIME()
 		WHERE order_id=@order_id;
 
 		INSERT INTO payment_records(order_id,user_id,payment_no,amount,payment_status,paid_time)
-		VALUES(@order_id,@user_id,@payment_no,@actual_amount,N'ÒÑÖ§¸¶',SYSDATETIME());
+		VALUES(@order_id,@user_id,@payment_no,@actual_amount,N'ï¿½ï¿½Ö§ï¿½ï¿½',SYSDATETIME());
 		
 		UPDATE book_items
 		SET stock=stock-oi.quantity,locked_stock=locked_stock-oi.quantity,sales_count=sales_count+oi.quantity
@@ -163,7 +163,7 @@ BEGIN
 
 		DECLARE @points INT =FLOOR(@actual_amount)
 		INSERT INTO points_records(user_id,points_change,reason,related_id)
-		VALUES(@user_id,@points,N'¹ºÂòÏû·Ñ',@order_id);
+		VALUES(@user_id,@points,N'ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½',@order_id);
 
 		UPDATE ordinary_users
 		SET total_points=total_points+@points,available_points=available_points+@points
@@ -196,21 +196,21 @@ BEGIN
 		SELECT @user_id=orders.user_id,@actual_amount=actual_amount,@payment_id=payment_id
 		FROM orders
 		LEFT JOIN payment_records pr ON pr.order_id=orders.order_id
-		WHERE orders.order_id=@order_id AND orders.order_status=N'ÒÑÍê³É';
+		WHERE orders.order_id=@order_id AND orders.order_status=N'ï¿½ï¿½ï¿½ï¿½ï¿½';
 		IF @user_id IS NULL
 		BEGIN
-			RAISERROR(N'¶©µ¥×´Ì¬²»ÔÊÐíÍË¿î»ò¶©µ¥²»´æÔÚ',16,1);
+			RAISERROR(N'ï¿½ï¿½ï¿½ï¿½×´Ì¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¿ï¿½ò¶©µï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½',16,1);
 		END
 
 		UPDATE orders
-		SET order_status=N'ÒÑÍË¿î',payment_status=N'ÒÑÍË¿î'
+		SET order_status=N'ï¿½ï¿½ï¿½Ë¿ï¿½',payment_status=N'ï¿½ï¿½ï¿½Ë¿ï¿½'
 		WHERE order_id=@order_id;
 
 		DECLARE @refund_no NVARCHAR(50);
 		EXEC sp_GetNextSeq N'REF',@refund_no OUTPUT;
 
 		INSERT INTO refund_records(order_id,user_id,payment_id,refund_no,refund_amount,refund_reason,refund_status,refund_time)
-		VALUES(@order_id,@user_id,@payment_id,@refund_no,@actual_amount,@refund_reason,N'ÒÑÍË¿î',SYSDATETIME());
+		VALUES(@order_id,@user_id,@payment_id,@refund_no,@actual_amount,@refund_reason,N'ï¿½ï¿½ï¿½Ë¿ï¿½',SYSDATETIME());
 
 		UPDATE book_items
 		SET stock=stock+oi.quantity,sales_count=sales_count-oi.quantity
@@ -246,7 +246,7 @@ BEGIN
 			WHERE user_id=@user_id AND checkin_date=CAST(SYSDATETIME() AS DATE)
 		)
 		BEGIN
-			RAISERROR(N'½ñÈÕÒÑÇ©µ½',16,1);
+			RAISERROR(N'ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç©ï¿½ï¿½',16,1);
 		END
 
 		DECLARE @yesterday DATE =DATEADD(DAY,-1,CAST(SYSDATETIME() AS DATE));
@@ -273,13 +273,13 @@ BEGIN
 		DECLARE @checkin_activity_id INT =(
 			SELECT activity_id
 			FROM promotion_activities
-			WHERE activity_name=N'Ã¿ÈÕÇ©µ½' AND status=N'½øÐÐÖÐ'
+			WHERE activity_name=N'Ã¿ï¿½ï¿½Ç©ï¿½ï¿½' AND status=N'ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½'
 		);
 		INSERT INTO checkin_record(user_id,activity_id,checkin_date,continuous_checkin_days,reward_points)
 		VALUES(@user_id,@checkin_activity_id,CAST(SYSDATETIME() AS DATE),@last_count,@reward_points);
 
 		INSERT INTO points_records(user_id,points_change,reason,related_id)
-		VALUES(@user_id,@reward_points,N'Ç©µ½',SCOPE_IDENTITY());
+		VALUES(@user_id,@reward_points,N'Ç©ï¿½ï¿½',SCOPE_IDENTITY());
 
 		UPDATE ordinary_users
 		SET total_points=total_points+@reward_points,available_points=available_points+@reward_points,continuous_checkin_days=@last_count
@@ -289,17 +289,17 @@ BEGIN
 		IF @last_count%7=0
 		BEGIN
 			INSERT INTO user_coupons(user_id,coupon_id,status)
-			SELECT @user_id,coupon_id,N'Î´Ê¹ÓÃ'
+			SELECT @user_id,coupon_id,N'Î´Ê¹ï¿½ï¿½'
 			FROM coupons
-			WHERE coupon_name=N'Á¬Ðø7ÌìÇ©µ½È¯' AND status=N'ÆôÓÃ';
+			WHERE coupon_name=N'ï¿½ï¿½ï¿½ï¿½7ï¿½ï¿½Ç©ï¿½ï¿½È¯' AND status=N'ï¿½ï¿½ï¿½ï¿½';
 			SET @got_coupon=1;
 		END
 		IF @last_count%30=0
 		BEGIN
 			INSERT INTO user_coupons(user_id,coupon_id,status)
-			SELECT @user_id,coupon_id,N'Î´Ê¹ÓÃ'
+			SELECT @user_id,coupon_id,N'Î´Ê¹ï¿½ï¿½'
 			FROM coupons
-			WHERE coupon_name=N'Á¬Ðø30ÌìÇ©µ½È¯' AND status=N'ÆôÓÃ';
+			WHERE coupon_name=N'ï¿½ï¿½ï¿½ï¿½30ï¿½ï¿½Ç©ï¿½ï¿½È¯' AND status=N'ï¿½ï¿½ï¿½ï¿½';
 			SET @got_coupon=1;
 		END
 
@@ -335,14 +335,14 @@ BEGIN
 		DECLARE @stock INT;
 		SELECT @req_points=required_points,@req_level=required_level,@stock=stock
 		FROM point_rewards WITH (ROWLOCK,XLOCK)
-		WHERE reward_id=@reward_id AND status=N'Æô¶¯';
+		WHERE reward_id=@reward_id AND status=N'ï¿½ï¿½ï¿½ï¿½';
 		
 		IF @user_points<@req_points
-			RAISERROR(N'¿ÉÓÃ»ý·Ö²»×ã',16,1);
+			RAISERROR(N'ï¿½ï¿½ï¿½Ã»ï¿½ï¿½Ö²ï¿½ï¿½ï¿½',16,1);
 		IF @user_level<@req_level
-			RAISERROR(N'»áÔ±µÇ¼Ç²»×ã',16,1);
+			RAISERROR(N'ï¿½ï¿½Ô±ï¿½Ç¼Ç²ï¿½ï¿½ï¿½',16,1);
 		IF @stock<=0
-			RAISERROR(N'½±Æ·ÒÑ¶ÒÍê',16,1);
+			RAISERROR(N'ï¿½ï¿½Æ·ï¿½Ñ¶ï¿½ï¿½ï¿½',16,1);
 
 		UPDATE ordinary_users
 		SET available_points=available_points-@req_points
@@ -355,7 +355,7 @@ BEGIN
 		INSERT INTO reward_redemptions(user_id,reward_id,used_points,redeemed_time)
 		VALUES(@user_id,@reward_id,@req_points,SYSDATETIME());
 		INSERT INTO points_records(user_id,points_change,reason,related_id)
-		VALUES(@user_id,@req_points,N'»ý·Ö¶Ò»»½±Æ·',SCOPE_IDENTITY());
+		VALUES(@user_id,-@req_points,N'ï¿½ï¿½ï¿½Ö¶Ò»ï¿½ï¿½ï¿½Æ·',SCOPE_IDENTITY());
 
 		COMMIT TRANSACTION;
 		SET @success=1;
@@ -368,3 +368,15 @@ BEGIN
 END;
 GO
 
+CREATE PROCEDURE sp_ExpireCoupons
+AS
+BEGIN
+    UPDATE user_coupons
+    SET status=N'ï¿½Ñ¹ï¿½ï¿½ï¿½'
+    FROM user_coupons
+    JOIN coupons ON user_coupons.coupon_id=coupons.coupon_id
+    WHERE user_coupons.status=N'Î´Ê¹ï¿½ï¿½' AND coupons.valid_end<CAST(SYSDATETIME() AS DATE);
+    
+    PRINT CONCAT(@@ROWCOUNT,N'ï¿½Å´ï¿½ï¿½ï¿½È¯ï¿½Ñ±ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½');
+END;
+GO
