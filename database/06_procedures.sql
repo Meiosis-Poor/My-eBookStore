@@ -7,6 +7,48 @@ USE My_eBookStore;
 GO
 
 -- ============================================================
+-- 0. sp_GetNextSeq  获取当日序列号（内部辅助过程）
+-- 参数：
+--   @seq_type   ORD / PAY / REF
+--   @new_no     输出：下一条编号（格式：日期 + 3位流水号，如 20260709001）
+-- ============================================================
+IF OBJECT_ID('sp_GetNextSeq', 'P') IS NOT NULL DROP PROCEDURE sp_GetNextSeq;
+GO
+CREATE PROCEDURE sp_GetNextSeq
+    @seq_type   NVARCHAR(5),
+    @new_no     NVARCHAR(50) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @today DATE = CAST(SYSDATETIME() AS DATE);
+
+    -- 更新或插入今日序号（UPDLOCK + HOLDLOCK 确保同一类型每天只有一个事务拿到当前序号）
+    UPDATE daily_sequences WITH (UPDLOCK, HOLDLOCK)
+    SET current_no = current_no + 1
+    WHERE seq_date = @today AND seq_type = @seq_type;
+
+    IF @@ROWCOUNT = 0
+    BEGIN
+        INSERT INTO daily_sequences (seq_date, seq_type, current_no)
+        VALUES (@today, @seq_type, 1);
+    END
+
+    -- 读取最新序号
+    DECLARE @seq INT;
+    SELECT @seq = current_no
+    FROM daily_sequences WITH (UPDLOCK, HOLDLOCK)
+    WHERE seq_date = @today AND seq_type = @seq_type;
+
+    -- 组装：前缀 + 日期 + 3位序号
+    SET @new_no = @seq_type + FORMAT(@today, 'yyyyMMdd') + RIGHT('000' + CAST(@seq AS NVARCHAR), 3);
+END;
+GO
+
+PRINT N'sp_GetNextSeq 创建完成';
+GO
+
+-- ============================================================
 -- 1. sp_CreateOrder  下单
 -- ============================================================
 -- 参数说明：
@@ -96,8 +138,8 @@ BEGIN
             RAISERROR(N'收货地址不存在', 16, 1);
         END
 
-        -- ===== 步骤 5：建订单 =====
-        SET @order_no = N'ORD' + FORMAT(SYSDATETIME(), 'yyyyMMddHHmmssfff');
+        -- ===== 步骤 5：生成订单号 + 建订单 =====
+        EXEC sp_GetNextSeq N'ORD', @order_no OUTPUT;
 
         INSERT INTO orders
             (user_id, order_no, total_amount, discount_amount, actual_amount,
@@ -181,7 +223,7 @@ BEGIN
             RAISERROR(N'订单状态异常，无法支付', 16, 1);
         END
 
-        SET @payment_no = N'PAY' + FORMAT(SYSDATETIME(), 'yyyyMMddHHmmssfff');
+        EXEC sp_GetNextSeq N'PAY', @payment_no OUTPUT;
 
         -- ① 更新订单
         UPDATE orders
@@ -270,8 +312,9 @@ BEGIN
             payment_status = N'已退款'
         WHERE order_id = @order_id;
 
-        -- ② 写退款记录
-        DECLARE @refund_no NVARCHAR(50) = N'REF' + FORMAT(SYSDATETIME(), 'yyyyMMddHHmmssfff');
+        -- ② 生成退款流水号 + 写退款记录
+        DECLARE @refund_no NVARCHAR(50);
+        EXEC sp_GetNextSeq N'REF', @refund_no OUTPUT;
 
         INSERT INTO refund_records
             (order_id, user_id, payment_id, refund_no, refund_amount,
@@ -343,10 +386,16 @@ BEGIN
         ELSE
             SET @last_cont = 1;
 
-        -- ③ 算积分奖励
-        SET @reward_points = 5;                    -- 基础 5 分
-        IF @last_cont % 7 = 0  SET @reward_points = 30;   -- 连续 7 天倍数 → 30 分
-        IF @last_cont % 30 = 0 SET @reward_points = 50;   -- 连续 30 天倍数 → 50 分
+        -- ③ 算积分奖励（每周循环：第1天5 第2天5 第3天10 第4天10 第5天10 第6天15 第7天30）
+        SET @reward_points = CASE (@last_cont - 1) % 7
+            WHEN 0 THEN 5
+            WHEN 1 THEN 5
+            WHEN 2 THEN 10
+            WHEN 3 THEN 10
+            WHEN 4 THEN 10
+            WHEN 5 THEN 15
+            WHEN 6 THEN 30
+        END;
 
         -- ④ 写签到记录
         DECLARE @act_id INT = (SELECT activity_id FROM promotion_activities
@@ -369,7 +418,7 @@ BEGIN
 
         -- ⑥ 连续 7 天或 30 天 → 发放代金券
         SET @got_coupon = 0;
-        IF @last_cont IN (7, 14, 21, 28)
+        IF @last_cont % 7 = 0
         BEGIN
             INSERT INTO user_coupons (user_id, coupon_id, status)
             SELECT @user_id, coupon_id, N'未使用'
@@ -377,7 +426,7 @@ BEGIN
             WHERE coupon_name = N'连续7天签到券' AND status = N'启用';
             SET @got_coupon = 1;
         END
-        IF @last_cont IN (30, 60, 90, 120)
+        IF @last_cont % 30 = 0
         BEGIN
             INSERT INTO user_coupons (user_id, coupon_id, status)
             SELECT @user_id, coupon_id, N'未使用'
@@ -422,7 +471,7 @@ BEGIN
 
         SELECT @user_points = available_points,
                @user_level  = level
-        FROM ordinary_users
+        FROM ordinary_users WITH (ROWLOCK, XLOCK)
         WHERE user_id = @user_id;
 
         -- ② 查奖品（排他锁）

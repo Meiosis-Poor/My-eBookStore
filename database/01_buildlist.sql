@@ -10,8 +10,8 @@ CREATE TABLE users(
 	password_hash VARCHAR(255) NOT NULL,
 	phone VARCHAR(20) NULL,
 	email NVARCHAR(100) NULL,
-	user_type NVARCHAR(20) NOT NULL CHECK(user_type IN (N'ÆÕÍ¨ÓÃ»§',N'Êéµê¹ÜÀíÔ±',N'ÏµÍ³¹ÜÀíÔ±')),
-	status NVARCHAR(20) NOT NULL DEFAULT N'Õý³£' CHECK(status IN (N'Õý³£',N'·â½û')),
+	user_type NVARCHAR(20) NOT NULL CHECK(user_type IN (N'ï¿½ï¿½Í¨ï¿½Ã»ï¿½',N'ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô±',N'ÏµÍ³ï¿½ï¿½ï¿½ï¿½Ô±')),
+	status NVARCHAR(20) NOT NULL DEFAULT N'ï¿½ï¿½ï¿½ï¿½' CHECK(status IN (N'ï¿½ï¿½ï¿½ï¿½',N'ï¿½ï¿½ï¿½')),
 	created_time DATETIME2 NOT NULL DEFAULT SYSDATETIME()
 );
 GO
@@ -29,7 +29,7 @@ GO
 CREATE TABLE store_admins(
 	user_id INT PRIMARY KEY FOREIGN KEY REFERENCES users(user_id),
 	admin_name NVARCHAR(50) NOT NULL,
-	admin_status NVARCHAR(20) NOT NULL DEFAULT N'Õý³£' CHECK (admin_status IN (N'Õý³£',N'Í£ÓÃ'))
+	admin_status NVARCHAR(20) NOT NULL DEFAULT N'ï¿½ï¿½ï¿½ï¿½' CHECK (admin_status IN (N'ï¿½ï¿½ï¿½ï¿½',N'Í£ï¿½ï¿½'))
 );
 GO
 
@@ -44,7 +44,7 @@ CREATE TABLE stores(
 	store_name NVARCHAR(50) NOT NULL UNIQUE,
 	user_id INT NOT NULL FOREIGN KEY REFERENCES users(user_id),
 	description NVARCHAR(500) NULL,
-	status NVARCHAR(20) NOT NULL DEFAULT N'Õý³£' CHECK (status IN (N'Õý³£',N'·â½û')),
+	status NVARCHAR(20) NOT NULL DEFAULT N'ï¿½ï¿½ï¿½ï¿½' CHECK (status IN (N'ï¿½ï¿½ï¿½ï¿½',N'ï¿½ï¿½ï¿½')),
 	created_time DATETIME2 NOT NULL DEFAULT SYSDATETIME()
 );
 GO
@@ -53,7 +53,7 @@ CREATE TABLE book_categories(
 	category_id INT PRIMARY KEY IDENTITY(1,1),
 	category_name NVARCHAR(50) NOT NULL,
 	description NVARCHAR(500) NULL,
-	status NVARCHAR(20) NOT NULL DEFAULT N'ÆôÓÃ' CHECK (status IN (N'ÆôÓÃ',N'Í£ÓÃ'))
+	status NVARCHAR(20) NOT NULL DEFAULT N'ï¿½ï¿½ï¿½ï¿½' CHECK (status IN (N'ï¿½ï¿½ï¿½ï¿½',N'Í£ï¿½ï¿½'))
 );
 GO
 
@@ -68,7 +68,7 @@ CREATE TABLE book_infos(
 	description NVARCHAR(MAX) NULL,
 	cover_image NVARCHAR(500) NULL,
 	embedding NVARCHAR(MAX) NULL,
-	status NVARCHAR(20) NOT NULL DEFAULT N'Õý³£' CHECK (status IN (N'Õý³£',N'ÏÂ¼Ü'))
+	status NVARCHAR(20) NOT NULL DEFAULT N'ï¿½ï¿½ï¿½ï¿½' CHECK (status IN (N'ï¿½ï¿½ï¿½ï¿½',N'ï¿½Â¼ï¿½'))
 );
 GO
 
@@ -80,7 +80,7 @@ CREATE TABLE book_items(
 	stock INT NOT NULL DEFAULT 0,
 	locked_stock INT NOT NULL DEFAULT 0,
 	sales_count INT NOT NULL DEFAULT 0,
-	status NVARCHAR(20) NOT NULL DEFAULT N'ÔÚÊÛ' CHECK (status IN (N'ÔÚÊÛ',N'ÏÂ¼Ü')),
+	status NVARCHAR(20) NOT NULL DEFAULT N'ï¿½ï¿½ï¿½ï¿½' CHECK (status IN (N'ï¿½ï¿½ï¿½ï¿½',N'ï¿½Â¼ï¿½')),
 	created_time DATETIME2 NOT NULL DEFAULT SYSDATETIME()
 );
 GO
@@ -92,7 +92,7 @@ CREATE TABLE promotion_activities(
 	description NVARCHAR(MAX) NOT NULL,
 	start_time DATETIME2 NOT NULL,
 	end_time DATETIME2 NOT NULL,
-	status NVARCHAR(20) NOT NULL DEFAULT N'Î´¿ªÊ¼' CHECK(status IN (N'Î´¿ªÊ¼',N'½øÐÐÖÐ',N'ÒÑ½áÊø')),
+	status NVARCHAR(20) NOT NULL DEFAULT N'Î´ï¿½ï¿½Ê¼' CHECK(status IN (N'Î´ï¿½ï¿½Ê¼',N'ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½',N'ï¿½Ñ½ï¿½ï¿½ï¿½')),
 	created_admin INT NOT NULL FOREIGN KEY REFERENCES system_admins(user_id)
 );
 GO
@@ -126,8 +126,8 @@ CREATE TABLE orders(
 	total_amount DECIMAL(10,2) NOT NULL,
 	discount_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
 	actual_amount DECIMAL(10,2) NOT NULL,
-	order_status NVARCHAR(20) NOT NULL DEFAULT N'´ýÖ§¸¶' CHECK (order_status IN (N'´ýÖ§¸¶',N'ÒÑÍê³É',N'ÒÑÈ¡Ïû',N'ÒÑÍË¿î')),
-	payment_status NVARCHAR(20) NOT NULL DEFAULT N'Î´Ö§¸¶' CHECK (payment_status IN (N'Î´Ö§¸¶',N'ÒÑÖ§¸¶',N'ÒÑÍË¿î')),
+	order_status NVARCHAR(20) NOT NULL DEFAULT N'ï¿½ï¿½Ö§ï¿½ï¿½' CHECK (order_status IN (N'ï¿½ï¿½Ö§ï¿½ï¿½',N'ï¿½ï¿½ï¿½ï¿½ï¿½',N'ï¿½ï¿½È¡ï¿½ï¿½',N'ï¿½ï¿½ï¿½Ë¿ï¿½')),
+	payment_status NVARCHAR(20) NOT NULL DEFAULT N'Î´Ö§ï¿½ï¿½' CHECK (payment_status IN (N'Î´Ö§ï¿½ï¿½',N'ï¿½ï¿½Ö§ï¿½ï¿½',N'ï¿½ï¿½ï¿½Ë¿ï¿½')),
 	receiver_name NVARCHAR(50) NOT NULL,
 	receiver_phone VARCHAR(20) NOT NULL,
 	receiver_addr NVARCHAR(200) NOT NULL,
@@ -152,8 +152,7 @@ CREATE TABLE payment_records(
 	user_id INT NOT NULL FOREIGN KEY REFERENCES users(user_id),
 	payment_no NVARCHAR(50) NOT NULL,
 	amount DECIMAL(10,2) NOT NULL,
-	payment_method NVARCHAR(20) NOT NULL,
-	payment_status NVARCHAR(20) NOT NULL DEFAULT N'Î´Ö§¸¶' CHECK (payment_status IN (N'Î´Ö§¸¶',N'ÒÑÖ§¸¶',N'ÒÑÍË¿î')),
+	payment_status NVARCHAR(20) NOT NULL DEFAULT N'Î´Ö§ï¿½ï¿½' CHECK (payment_status IN (N'Î´Ö§ï¿½ï¿½',N'ï¿½ï¿½Ö§ï¿½ï¿½',N'ï¿½ï¿½ï¿½Ë¿ï¿½')),
 	paid_time DATETIME2 NULL,
 	created_time DATETIME2 NOT NULL DEFAULT SYSDATETIME()
 );
@@ -167,7 +166,7 @@ CREATE TABLE refund_records(
 	refund_no NVARCHAR(50) NOT NULL,
 	refund_amount DECIMAL(10,2) NOT NULL,
 	refund_reason NVARCHAR(MAX) NULL,
-	refund_status NVARCHAR(20) NOT NULL DEFAULT N'´¦ÀíÖÐ' CHECK (refund_status IN (N'´¦ÀíÖÐ',N'ÒÑÍË¿î',N'ÒÑ¾Ü¾ø')),
+	refund_status NVARCHAR(20) NOT NULL DEFAULT N'ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½' CHECK (refund_status IN (N'ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½',N'ï¿½ï¿½ï¿½Ë¿ï¿½',N'ï¿½Ñ¾Ü¾ï¿½')),
 	request_time DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
 	refund_time DATETIME2 NULL
 );
@@ -177,13 +176,13 @@ CREATE TABLE coupons(
 	coupon_id INT PRIMARY KEY IDENTITY(1,1),
 	activity_id INT NOT NULL FOREIGN KEY REFERENCES promotion_activities(activity_id),
 	coupon_name NVARCHAR(50) NOT NULL,
-	coupon_type NVARCHAR(20) NOT NULL CHECK (coupon_type IN (N'Æ½Ì¨È¯',N'µêÆÌÈ¯')),
+	coupon_type NVARCHAR(20) NOT NULL CHECK (coupon_type IN (N'Æ½Ì¨È¯',N'ï¿½ï¿½ï¿½ï¿½È¯')),
 	store_id INT NULL FOREIGN KEY REFERENCES stores(store_id),
 	amount DECIMAL(10,2) NOT NULL,
 	min_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
 	valid_start DATETIME2 NOT NULL,
 	valid_end DATETIME2 NOT NULL,
-	status NVARCHAR(20) NOT NULL DEFAULT N'ÆôÓÃ' CHECK (status IN (N'ÆôÓÃ',N'Í£ÓÃ'))
+	status NVARCHAR(20) NOT NULL DEFAULT N'ï¿½ï¿½ï¿½ï¿½' CHECK (status IN (N'ï¿½ï¿½ï¿½ï¿½',N'Í£ï¿½ï¿½'))
 );
 GO
 
@@ -191,7 +190,7 @@ CREATE TABLE user_coupons(
 	user_coupon_id INT PRIMARY KEY IDENTITY(1,1),
 	user_id INT NOT NULL FOREIGN KEY REFERENCES users(user_id),
 	coupon_id INT NOT NULL FOREIGN KEY REFERENCES coupons(coupon_id),
-	status NVARCHAR(20) NOT NULL DEFAULT N'Î´Ê¹ÓÃ' CHECK (status IN (N'Î´Ê¹ÓÃ',N'ÒÑÊ¹ÓÃ',N'ÒÑ¹ýÆÚ')),
+	status NVARCHAR(20) NOT NULL DEFAULT N'Î´Ê¹ï¿½ï¿½' CHECK (status IN (N'Î´Ê¹ï¿½ï¿½',N'ï¿½ï¿½Ê¹ï¿½ï¿½',N'ï¿½Ñ¹ï¿½ï¿½ï¿½')),
 	received_time DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
 	used_time DATETIME2 NULL,
 	order_id INT NULL FOREIGN KEY REFERENCES orders(order_id)
@@ -201,11 +200,11 @@ GO
 CREATE TABLE point_rewards(
 	reward_id INT PRIMARY KEY IDENTITY(1,1),
 	reward_name NVARCHAR(50) NOT NULL,
-	reward_type NVARCHAR(20) NOT NULL CHECK (reward_type IN (N'ÊµÎï',N'´ú½ðÈ¯',N'ÐéÄâÉÌÆ·')),
+	reward_type NVARCHAR(20) NOT NULL CHECK (reward_type IN (N'Êµï¿½ï¿½',N'ï¿½ï¿½ï¿½ï¿½È¯',N'ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ·')),
 	required_points INT NOT NULL,
 	required_level INT NOT NULL DEFAULT 1,
 	stock INT NOT NULL DEFAULT 0,
-	status NVARCHAR(20) NOT NULL DEFAULT N'ÆôÓÃ' CHECK (status IN (N'ÆôÓÃ',N'Í£ÓÃ')),
+	status NVARCHAR(20) NOT NULL DEFAULT N'ï¿½ï¿½ï¿½ï¿½' CHECK (status IN (N'ï¿½ï¿½ï¿½ï¿½',N'Í£ï¿½ï¿½')),
 	manage_admin INT NOT NULL FOREIGN KEY REFERENCES system_admins(user_id)
 );
 GO
@@ -215,7 +214,7 @@ CREATE TABLE reward_redemptions(
 	user_id INT NOT NULL FOREIGN KEY REFERENCES users(user_id),
 	reward_id INT NOT NULL FOREIGN KEY REFERENCES point_rewards(reward_id),
 	used_points INT NOT NULL,
-	status NVARCHAR(20) NOT NULL DEFAULT N'ÒÑÍê³É' CHECK (status IN (N'ÒÑÍê³É',N'ÒÑÈ¡Ïû')),
+	status NVARCHAR(20) NOT NULL DEFAULT N'ï¿½ï¿½ï¿½ï¿½ï¿½' CHECK (status IN (N'ï¿½ï¿½ï¿½ï¿½ï¿½',N'ï¿½ï¿½È¡ï¿½ï¿½')),
 	redeemed_time DATETIME2 NOT NULL DEFAULT SYSDATETIME()
 );
 GO
@@ -223,7 +222,7 @@ GO
 CREATE TABLE store_activity_participation(
 	store_id INT NOT NULL FOREIGN KEY REFERENCES stores(store_id),
 	activity_id INT NOT NULL FOREIGN KEY REFERENCES promotion_activities(activity_id),
-	participate_status NVARCHAR(20) NOT NULL DEFAULT N'ÒÑ²ÎÓë' CHECK (participate_status IN (N'ÒÑ²ÎÓë',N'ÒÑÍË³ö')),
+	participate_status NVARCHAR(20) NOT NULL DEFAULT N'ï¿½Ñ²ï¿½ï¿½ï¿½' CHECK (participate_status IN (N'ï¿½Ñ²ï¿½ï¿½ï¿½',N'ï¿½ï¿½ï¿½Ë³ï¿½')),
 	join_time DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
 	coupon_amount DECIMAL(10,2) NULL,
 	coupon_quantity INT NULL,
@@ -238,7 +237,7 @@ CREATE TABLE activity_books(
 	activity_price DECIMAL(10,2) NULL,
 	discount_rate DECIMAL(5,2) NULL,
 	activity_stock INT NULL,
-	status NVARCHAR(20) NOT NULL DEFAULT N'²ÎÓëÖÐ' CHECK (status IN (N'²ÎÓëÖÐ',N'ÒÑ½áÊø')),
+	status NVARCHAR(20) NOT NULL DEFAULT N'ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½' CHECK (status IN (N'ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½',N'ï¿½Ñ½ï¿½ï¿½ï¿½')),
 	PRIMARY KEY(store_id,activity_id,book_item_id),
 	FOREIGN KEY(store_id,activity_id) REFERENCES store_activity_participation(store_id,activity_id)
 );
@@ -260,7 +259,7 @@ CREATE TABLE points_records(
 	record_id INT PRIMARY KEY IDENTITY(1,1),
 	user_id INT NOT NULL FOREIGN KEY REFERENCES users(user_id),
 	points_change INT NOT NULL,
-	reason NVARCHAR(50) NOT NULL CHECK (reason IN (N'Ç©µ½',N'¹ºÂò',N'¶Ò»»½±Æ·',N'µÈ¼¶ÖÜ½±Àø')),
+	reason NVARCHAR(50) NOT NULL CHECK (reason IN (N'Ç©ï¿½ï¿½',N'ï¿½ï¿½ï¿½ï¿½',N'ï¿½Ò»ï¿½ï¿½ï¿½Æ·',N'ï¿½È¼ï¿½ï¿½Ü½ï¿½ï¿½ï¿½')),
 	related_id INT NOT NULL,
 	created_time DATETIME2 NOT NULL DEFAULT SYSDATETIME()
 );
@@ -304,14 +303,22 @@ CREATE TABLE store_blacklists(
 	created_time DATETIME2 NOT NULL DEFAULT SYSDATETIME()
 );
 GO
+
 CREATE TABLE recommendation_settings(
-	setting_id INT NOT NULL CONSTRAINT PK_recommendation_settings PRIMARY KEY DEFAULT 1,
+	setting_id INT NOT NULL PRIMARY KEY DEFAULT 1 CHECK (setting_id=1),
 	guess_weight FLOAT NOT NULL DEFAULT 1,
 	hot_weight FLOAT NOT NULL DEFAULT 1,
 	search_embedding_enabled BIT NOT NULL DEFAULT 1,
 	detail_same_store_enabled BIT NOT NULL DEFAULT 1,
-	updated_time DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
-	CONSTRAINT CK_recommendation_settings_singleton CHECK(setting_id = 1)
+	updated_time DATETIME2 NOT NULL DEFAULT SYSDATETIME()
+);
+GO
+
+CREATE TABLE daily_sequences(
+	seq_date DATE NOT NULL,
+	seq_type NVARCHAR(5) NOT NULL CHECK (seq_type IN (N'ORD',N'PAY',N'REF')),
+	current_no INT NOT NULL DEFAULT 1,
+	PRIMARY KEY(seq_date,seq_type)
 );
 GO
 

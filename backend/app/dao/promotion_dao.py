@@ -128,7 +128,6 @@ def list_activities(admin_view: bool = False, store_id: int | None = None) -> li
 
 def checkin(user_id: int) -> dict[str, Any]:
     today = date.today()
-    reward_points = 10
     with get_conn() as conn:
         if conn.cursor().execute(
             "SELECT 1 FROM checkin_record WHERE user_id = ? AND checkin_date = ?",
@@ -143,6 +142,9 @@ def checkin(user_id: int) -> dict[str, Any]:
             ).fetchval()
             or 0
         ) + 1
+        # 每周循环：第1天5 第2天5 第3天10 第4天10 第5天10 第6天15 第7天30
+        reward_map = [5, 5, 10, 10, 10, 15, 30]
+        reward_points = reward_map[(days - 1) % 7]
         conn.cursor().execute(
             "INSERT INTO checkin_record(user_id, checkin_date, continuous_checkin_days, reward_points) VALUES (?, ?, ?, ?)",
             user_id,

@@ -63,5 +63,5 @@ WHERE object_id=OBJECT_ID('book_infos') AND is_primary_key=1
 GO
 
 CREATE FULLTEXT CATALOG ft AS DEFAULT;
-CREATE FULLTEXT INDEX ON book_infos(book_name,description) KEY INDEX PK__book_inf__6CE36DDA19857735 ON ft; --用上面查询的结果替换主键索引名
+CREATE FULLTEXT INDEX ON book_infos(book_name,description) KEY INDEX PK__book_inf__6CE36DDA19857735 ON ft;
 GO
