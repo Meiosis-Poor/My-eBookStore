@@ -4,6 +4,19 @@ const STORAGE_KEYS = {
   TOKEN: "ebs_token",
   USER: "ebs_user",
 };
+const DEV_MOCK_KEY = "ebs_dev_mock";
+
+function syncDevMockFlag() {
+  const value = new URLSearchParams(window.location.search).get("mock");
+  if (value === "1") localStorage.setItem(DEV_MOCK_KEY, "1");
+  if (value === "0") localStorage.removeItem(DEV_MOCK_KEY);
+}
+
+function isDevMockEnabled() {
+  return localStorage.getItem(DEV_MOCK_KEY) === "1";
+}
+
+syncDevMockFlag();
 
 function buildQuery(params = {}) {
   return new URLSearchParams(
@@ -77,6 +90,7 @@ const BookAPI = {
     try {
       return await request("/categories");
     } catch (err) {
+      if (!isDevMockEnabled()) throw err;
       console.warn("[BookAPI.listCategories] 使用模拟数据：", err.message);
       return mockDelay(MOCK_CATEGORIES);
     }
@@ -97,6 +111,7 @@ const BookAPI = {
       ).toString();
       return await request(`/books?${qs}`);
     } catch (err) {
+      if (!isDevMockEnabled()) throw err;
       console.warn("[BookAPI.list] 使用模拟数据：", err.message);
       let list = [...MOCK_BOOKS];
       if (params.categoryId) {
@@ -131,6 +146,7 @@ const BookAPI = {
       ).toString();
       return await request(`/books/recommended?${qs}`);
     } catch (err) {
+      if (!isDevMockEnabled()) throw err;
       console.warn("[BookAPI.recommended] 使用模拟数据：", err.message);
       const list =
         params.type === "hot"
@@ -149,6 +165,7 @@ const BookAPI = {
     try {
       return await request(`/books/${bookItemId}`);
     } catch (err) {
+      if (!isDevMockEnabled()) throw err;
       console.warn("[BookAPI.detail] 使用模拟数据：", err.message);
       const book = MOCK_BOOKS.find((b) => String(b.bookItemId) === String(bookItemId)) || MOCK_BOOKS[0];
       const reviews = MOCK_REVIEWS.filter((r) => String(r.bookItemId) === String(book.bookItemId));
@@ -165,6 +182,7 @@ const BookAPI = {
     try {
       return await request(`/books/${bookItemId}/similar`);
     } catch (err) {
+      if (!isDevMockEnabled()) throw err;
       console.warn("[BookAPI.similar] 使用模拟数据：", err.message);
       return mockDelay(MOCK_BOOKS.filter((b) => String(b.bookItemId) !== String(bookItemId)).slice(0, 5));
     }
@@ -194,6 +212,7 @@ const StoreAPI = {
     try {
       return await request(`/stores/${storeId}`, { method: "PUT", body: payload });
     } catch (err) {
+      if (!isDevMockEnabled()) throw err;
       console.warn("[StoreAPI.updateProfile] 使用模拟数据更新：", err.message);
       const profile = MOCK_STORE_PROFILES.find((s) => String(s.storeId) === String(storeId));
       if (profile) {
@@ -215,6 +234,7 @@ const SearchAPI = {
     try {
       return await request("/search/history");
     } catch (err) {
+      if (!isDevMockEnabled()) throw err;
       console.warn("[SearchAPI.history] 使用模拟数据：", err.message);
       return mockDelay([...MOCK_SEARCH_HISTORY]);
     }
@@ -229,6 +249,10 @@ const SearchAPI = {
     try {
       return await request("/search/history", { method: "POST", body: { keyword } });
     } catch (err) {
+      if (!isDevMockEnabled()) {
+        console.warn("[SearchAPI.record] 搜索历史保存失败：", err.message);
+        return { ok: false };
+      }
       MOCK_SEARCH_HISTORY = [keyword, ...MOCK_SEARCH_HISTORY.filter((k) => k !== keyword)].slice(0, 8);
       persistMockSearchHistory();
       return mockDelay({ ok: true });
@@ -338,6 +362,7 @@ const AdminAPI = {
       try {
         return await request(`/admin/books?${new URLSearchParams(params)}`);
       } catch (err) {
+        if (!isDevMockEnabled()) throw err;
         console.warn("[AdminAPI.books.list] 使用模拟数据：", err.message);
         let list = MOCK_BOOKS;
         if (params.keyword) {
@@ -358,6 +383,7 @@ const AdminAPI = {
       try {
         return await request("/admin/books", { method: "POST", body: payload });
       } catch (err) {
+        if (!isDevMockEnabled()) throw err;
         if (payload.isbn && MOCK_BOOKS.some((b) => b.isbn === payload.isbn)) {
           throw new Error("ISBN已存在，请勿重复添加");
         }
@@ -391,6 +417,7 @@ const AdminAPI = {
       try {
         return await request(`/admin/books/${bookItemId}`, { method: "PUT", body: payload });
       } catch (err) {
+        if (!isDevMockEnabled()) throw err;
         const book = MOCK_BOOKS.find((b) => String(b.bookItemId) === String(bookItemId));
         if (book) {
           Object.assign(book, payload);
@@ -407,6 +434,7 @@ const AdminAPI = {
       try {
         return await request(`/admin/books/${bookItemId}`, { method: "DELETE" });
       } catch (err) {
+        if (!isDevMockEnabled()) throw err;
         const idx = MOCK_BOOKS.findIndex((b) => String(b.bookItemId) === String(bookItemId));
         if (idx !== -1) MOCK_BOOKS.splice(idx, 1);
         return mockDelay({ ok: true });
@@ -417,6 +445,7 @@ const AdminAPI = {
       try {
         return await request(`/admin/books/${bookItemId}/force-takedown`, { method: "POST", body: { reason } });
       } catch (err) {
+        if (!isDevMockEnabled()) throw err;
         const idx = MOCK_BOOKS.findIndex((b) => String(b.bookItemId) === String(bookItemId));
         if (idx !== -1) MOCK_BOOKS.splice(idx, 1);
         return mockDelay({ ok: true });
@@ -473,6 +502,7 @@ const AdminAPI = {
         const path = activity.activityId ? `/admin/promotions/activities/${activity.activityId}` : "/admin/promotions/activities";
         return await request(path, { method, body: activity });
       } catch (err) {
+        if (!isDevMockEnabled()) throw err;
         return mockDelay({ ok: true });
       }
     },
@@ -492,6 +522,7 @@ const AdminAPI = {
       try {
         return await request("/admin/promotions/coupons", { method: "POST", body: payload });
       } catch (err) {
+        if (!isDevMockEnabled()) throw err;
         return mockDelay({ ok: true });
       }
     },
@@ -502,6 +533,7 @@ const AdminAPI = {
         const path = reward.rewardId ? `/admin/promotions/rewards/${reward.rewardId}` : "/admin/promotions/rewards";
         return await request(path, { method, body: reward });
       } catch (err) {
+        if (!isDevMockEnabled()) throw err;
         return mockDelay({ ok: true });
       }
     },

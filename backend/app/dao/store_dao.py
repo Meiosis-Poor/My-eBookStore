@@ -79,7 +79,7 @@ def add_to_blacklist(store_id: int, user_id: int, reason: str | None = None) -> 
             "SELECT COUNT(DISTINCT store_id) FROM store_blacklists WHERE user_id = ?",
             user_id,
         ).fetchval()
-        if int(count or 0) > 10:
+        if int(count or 0) >= 10:
             conn.cursor().execute("UPDATE users SET status = N'封禁' WHERE user_id = ?", user_id)
         return int(count or 0)
 

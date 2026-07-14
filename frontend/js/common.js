@@ -96,7 +96,15 @@ function requireLogin(message = "请先登录后再进行该操作") {
 async function refreshCartBadge() {
   const badge = document.getElementById("cartBadge");
   if (!badge) return;
-  const count = getLocalCartCount();
+  let count = 0;
+  if (getCurrentUser() && !isAdminRole(getCurrentUser())) {
+    try {
+      const items = await CartAPI.list();
+      count = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+    } catch (err) {
+      console.warn("[refreshCartBadge] 购物车数量加载失败：", err.message);
+    }
+  }
   badge.textContent = count > 99 ? "99+" : String(count);
   // .cart-badge 自身设置了 display:flex，与原生 hidden 属性同优先级时会被作者样式表覆盖，
   // 必须用 .hidden（!important）才能真正隐藏

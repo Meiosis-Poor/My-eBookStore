@@ -121,7 +121,7 @@ def guess_books(user_id: int | None, limit: int) -> list[dict[str, Any]]:
 
 def require_store_owner(user: dict[str, Any], store_id: int) -> None:
     if DB_TO_ROLE.get(user["user_type"]) != "platform_admin" and user.get("store_id") != store_id:
-        fail("鏃犳潈闄愮淮鎶よ搴楅摵", 403)
+        fail("无权限维护该店铺", 403)
 
 
 @api.get("/health")
@@ -179,9 +179,9 @@ def login(payload: dict[str, Any] = Body(...)) -> dict[str, Any]:
         fail("账号类型不正确")
     user = user_dao.get_auth_user_by_name(payload.get("userName"))
     if not user or not verify_password(payload.get("password") or "", user["password_hash"]):
-        fail("鐢ㄦ埛鍚嶆垨瀵嗙爜閿欒", 401)
+        fail("用户名或密码错误", 401)
     if user["user_type"] != user_type:
-        fail("璐﹀彿绫诲瀷涓庣敤鎴疯韩浠戒笉鍖归厤", 403)
+        fail("账号类型与用户身份不匹配", 403)
     if user["status"] == "封禁":
         fail("当前账号已被禁用，请联系管理员", 403)
     return ok({"token": create_token(user), "user": public_user(user)})
@@ -402,16 +402,15 @@ def address_remove(addressId: int, user: dict[str, Any] = Depends(current_user))
 def order_create(payload: dict[str, Any] = Body(...), user: dict[str, Any] = Depends(current_user)) -> dict[str, Any]:
     ids = [int(x) for x in payload.get("cartItemIds") or []]
     if not ids:
-        fail("璐墿杞︿腑鏆傛棤鍟嗗搧")
-    discount = float(payload.get("discountAmount") or 0)
+        fail("购物车中暂无商品")
+    address_id = payload.get("addressId")
+    if not address_id:
+        fail("请选择有效收货地址")
     try:
         data = order_dao.create_from_cart(
             user_id=user["user_id"],
             book_item_ids=ids,
-            receiver_name=payload.get("receiverName") or "",
-            receiver_phone=payload.get("receiverPhone") or "",
-            receiver_address=payload.get("receiverAddress") or "",
-            discount_amount=discount,
+            address_id=int(address_id),
             coupon_id=payload.get("couponId"),
         )
     except ValueError as exc:
@@ -500,7 +499,10 @@ def join_activity(activityId: int, user: dict[str, Any] = Depends(current_user))
 
 @api.get("/promotions/coupons/my")
 def my_coupons(status: str = "unused", user: dict[str, Any] = Depends(current_user)) -> dict[str, Any]:
-    return ok(promotion_dao.list_user_coupons(user["user_id"], status))
+    try:
+        return ok(promotion_dao.list_user_coupons(user["user_id"], status))
+    except ValueError as exc:
+        fail(str(exc))
 
 
 @api.get("/promotions/rewards")
@@ -511,10 +513,10 @@ def rewards() -> dict[str, Any]:
 @api.post("/promotions/rewards/{rewardId}/redeem")
 def redeem(rewardId: int, user: dict[str, Any] = Depends(current_user)) -> dict[str, Any]:
     try:
-        promotion_dao.redeem_reward(user["user_id"], rewardId)
+        data = promotion_dao.redeem_reward(user["user_id"], rewardId)
     except ValueError as exc:
         fail(str(exc))
-    return ok({"ok": True})
+    return ok({"ok": True, **data})
 
 
 @api.post("/promotions/weekly-coupon/claim")
@@ -523,9 +525,6 @@ def weekly_coupon(user: dict[str, Any] = Depends(current_user)) -> dict[str, Any
         return ok(promotion_dao.claim_weekly_coupon(user["user_id"]))
     except ValueError as exc:
         fail(str(exc))
-    if int(user.get("level") or 1) < 3:
-        fail("当前等级暂不能领取周代金券")
-    return ok({"ok": True})
 
 
 @api.get("/users/me")
@@ -566,7 +565,7 @@ def admin_books(keyword: Optional[str] = None, page: int = 1, pageSize: int = 50
 def admin_book_create(payload: dict[str, Any] = Body(...), user: dict[str, Any] = Depends(require_roles("seller", "platform_admin"))) -> dict[str, Any]:
     store_id = int(payload.get("storeId") or user.get("store_id") or 0)
     if not store_id:
-        fail("缂哄皯搴楅摵淇℃伅")
+        fail("缺少店铺信息")
     require_store_owner(user, store_id)
     try:
         book_item_id = book_dao.create_book(
@@ -629,7 +628,10 @@ def admin_order_status(orderId: int, payload: dict[str, Any] = Body(...), _: dic
 
 @api.post("/admin/orders/{orderId}/refund/{action}")
 def admin_refund(orderId: int, action: str, _: dict[str, Any] = Depends(require_roles("seller", "platform_admin"))) -> dict[str, Any]:
-    order_dao.handle_refund(orderId, action == "approve")
+    try:
+        order_dao.handle_refund(orderId, action == "approve")
+    except ValueError as exc:
+        fail(str(exc))
     return ok({"ok": True})
 
 

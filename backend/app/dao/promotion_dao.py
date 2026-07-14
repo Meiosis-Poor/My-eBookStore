@@ -6,6 +6,7 @@ from datetime import date, datetime, timedelta
 from typing import Any
 
 from ..db import get_conn, many, one
+from . import points_dao
 
 
 STATUS_ACTIVE = "进行中"
@@ -31,6 +32,10 @@ def _front_reward_type(db_value: str | None) -> str | None:
 
 def _db_reward_type(front_value: str | None) -> str:
     return {"physical": "实物", "coupon": "代金券", "virtual": "虚拟商品"}.get(front_value or "", "实物")
+
+
+def _checkin_reward(continuous_days: int) -> int:
+    return [5, 5, 10, 10, 10, 15, 30][(continuous_days - 1) % 7]
 
 
 def _store_participation_summary(conn: Any, store_id: int, activity_id: int) -> dict[str, Any]:
@@ -128,55 +133,93 @@ def list_activities(admin_view: bool = False, store_id: int | None = None) -> li
 
 def checkin(user_id: int) -> dict[str, Any]:
     today = date.today()
+    yesterday = today - timedelta(days=1)
     with get_conn() as conn:
-        if conn.cursor().execute(
-            "SELECT 1 FROM checkin_record WHERE user_id = ? AND checkin_date = ?",
+        cursor = conn.cursor()
+        if cursor.execute(
+            "SELECT 1 FROM checkin_record WITH (UPDLOCK, HOLDLOCK) WHERE user_id = ? AND checkin_date = ?",
             user_id,
             today,
         ).fetchone():
             raise ValueError("今日已签到，请勿重复操作")
-        days = int(
-            conn.cursor().execute(
-                "SELECT continuous_checkin_days FROM ordinary_users WHERE user_id = ?",
-                user_id,
-            ).fetchval()
-            or 0
-        ) + 1
-        # 每周循环：第1天5 第2天5 第3天10 第4天10 第5天10 第6天15 第7天30
-        reward_map = [5, 5, 10, 10, 10, 15, 30]
-        reward_points = reward_map[(days - 1) % 7]
-        conn.cursor().execute(
-            "INSERT INTO checkin_record(user_id, checkin_date, continuous_checkin_days, reward_points) VALUES (?, ?, ?, ?)",
-            user_id,
-            today,
-            days,
-            reward_points,
-        )
-        conn.cursor().execute(
+
+        previous = cursor.execute(
             """
-            UPDATE ordinary_users
-            SET continuous_checkin_days = ?, total_points = total_points + ?,
-                available_points = available_points + ?
-            WHERE user_id = ?
+            SELECT TOP 1 continuous_checkin_days
+            FROM checkin_record
+            WHERE user_id = ? AND checkin_date = ?
+            ORDER BY checkin_id DESC
             """,
+            user_id,
+            yesterday,
+        ).fetchone()
+        days = int(previous[0]) + 1 if previous else 1
+        reward_points = _checkin_reward(days)
+        activity_id = cursor.execute(
+            """
+            SELECT TOP 1 activity_id
+            FROM promotion_activities
+            WHERE activity_name = N'每日签到' AND status = N'进行中'
+            ORDER BY activity_id DESC
+            """,
+        ).fetchval()
+        checkin_id = int(
+            cursor.execute(
+                """
+                INSERT INTO checkin_record(
+                    user_id, activity_id, checkin_date, continuous_checkin_days, reward_points
+                )
+                OUTPUT INSERTED.checkin_id
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                user_id,
+                activity_id,
+                today,
+                days,
+                reward_points,
+            ).fetchone()[0]
+        )
+        cursor.execute(
+            "UPDATE ordinary_users SET continuous_checkin_days = ? WHERE user_id = ?",
             days,
-            reward_points,
-            reward_points,
             user_id,
         )
-        conn.cursor().execute(
-            "INSERT INTO points_records(user_id, points_change, reason, related_id) VALUES (?, ?, N'签到', ?)",
-            user_id,
-            reward_points,
-            user_id,
-        )
-    return {"continuousDays": days, "rewardPoints": reward_points}
+        points_dao.add_points(conn, user_id, reward_points, "签到", checkin_id)
+
+        got_coupon = False
+        coupon_names: list[str] = []
+        if days % 7 == 0:
+            coupon_names.append("连续7天签到券")
+        if days % 30 == 0:
+            coupon_names.append("连续30天签到券")
+        for coupon_name in coupon_names:
+            coupon_rows = cursor.execute(
+                "SELECT coupon_id FROM coupons WHERE coupon_name = ? AND status = N'启用'",
+                coupon_name,
+            ).fetchall()
+            for coupon_row in coupon_rows:
+                cursor.execute(
+                    "INSERT INTO user_coupons(user_id, coupon_id, status) VALUES (?, ?, N'未使用')",
+                    user_id,
+                    coupon_row[0],
+                )
+                got_coupon = True
+        return {"continuousDays": days, "rewardPoints": reward_points, "gotCoupon": got_coupon}
 
 
 def list_user_coupons(user_id: int, status: str = "unused") -> list[dict[str, Any]]:
     db_status = {"unused": COUPON_UNUSED, "used": COUPON_USED, "expired": COUPON_EXPIRED}.get(status, COUPON_UNUSED)
     extra_where = "AND c.status = N'启用' AND c.valid_end >= SYSDATETIME()" if status == "unused" else ""
     with get_conn() as conn:
+        conn.cursor().execute(
+            """
+            UPDATE uc
+            SET status = N'已过期'
+            FROM user_coupons uc
+            JOIN coupons c ON c.coupon_id = uc.coupon_id
+            WHERE uc.status = N'未使用' AND c.valid_end < SYSDATETIME()
+            """
+        )
         rows = many(
             conn.cursor().execute(
                 f"""
@@ -249,10 +292,21 @@ def list_rewards() -> list[dict[str, Any]]:
     return rows
 
 
-def redeem_reward(user_id: int, reward_id: int) -> None:
+def redeem_reward(user_id: int, reward_id: int) -> dict[str, Any]:
     with get_conn() as conn:
-        reward = one(conn.cursor().execute("SELECT * FROM point_rewards WHERE reward_id = ? AND status = N'启用'", reward_id))
-        profile = one(conn.cursor().execute("SELECT * FROM ordinary_users WHERE user_id = ?", user_id))
+        cursor = conn.cursor()
+        profile = one(
+            cursor.execute(
+                "SELECT * FROM ordinary_users WITH (UPDLOCK, HOLDLOCK) WHERE user_id = ?",
+                user_id,
+            )
+        )
+        reward = one(
+            cursor.execute(
+                "SELECT * FROM point_rewards WITH (UPDLOCK, HOLDLOCK) WHERE reward_id = ? AND status = N'启用'",
+                reward_id,
+            )
+        )
         if not reward:
             raise ValueError("奖品不存在")
         if not profile:
@@ -263,24 +317,31 @@ def redeem_reward(user_id: int, reward_id: int) -> None:
             raise ValueError("等级不够")
         if int(reward["stock"]) <= 0:
             raise ValueError("库存不足")
-        conn.cursor().execute(
+        cursor.execute(
             "UPDATE ordinary_users SET available_points = available_points - ? WHERE user_id = ?",
             reward["required_points"],
             user_id,
         )
-        conn.cursor().execute("UPDATE point_rewards SET stock = stock - 1 WHERE reward_id = ?", reward_id)
-        conn.cursor().execute(
-            "INSERT INTO reward_redemptions(user_id, reward_id, used_points) VALUES (?, ?, ?)",
-            user_id,
-            reward_id,
-            reward["required_points"],
+        cursor.execute("UPDATE point_rewards SET stock = stock - 1 WHERE reward_id = ?", reward_id)
+        redemption_id = int(
+            cursor.execute(
+                """
+                INSERT INTO reward_redemptions(user_id, reward_id, used_points)
+                OUTPUT INSERTED.redemption_id
+                VALUES (?, ?, ?)
+                """,
+                user_id,
+                reward_id,
+                reward["required_points"],
+            ).fetchone()[0]
         )
-        conn.cursor().execute(
+        cursor.execute(
             "INSERT INTO points_records(user_id, points_change, reason, related_id) VALUES (?, ?, N'兑换奖品', ?)",
             user_id,
             -int(reward["required_points"]),
-            reward_id,
+            redemption_id,
         )
+        return {"availablePoints": int(profile["available_points"]) - int(reward["required_points"])}
 
 
 def join_activity(user_id: int, activity_id: int) -> dict[str, Any]:
@@ -301,10 +362,16 @@ def join_activity(user_id: int, activity_id: int) -> dict[str, Any]:
             raise ValueError("活动不存在或已结束")
         if conn.cursor().execute(
             """
-            SELECT 1
-            FROM user_coupons uc
-            JOIN coupons c ON c.coupon_id = uc.coupon_id
-            WHERE uc.user_id = ? AND c.activity_id = ?
+            SELECT 1 FROM (
+                SELECT uc.user_id, c.activity_id
+                FROM user_coupons uc
+                JOIN coupons c ON c.coupon_id = uc.coupon_id
+                UNION ALL
+                SELECT pr.user_id, pr.related_id
+                FROM points_records pr
+                WHERE pr.reason = N'等级周奖励'
+            ) participation
+            WHERE participation.user_id = ? AND participation.activity_id = ?
             """,
             user_id,
             activity_id,
@@ -334,22 +401,7 @@ def join_activity(user_id: int, activity_id: int) -> dict[str, Any]:
             return {"ok": True, "activityId": activity_id, "rewardCouponName": coupon["coupon_name"]}
 
         reward_points = 20
-        conn.cursor().execute(
-            """
-            UPDATE ordinary_users
-            SET total_points = total_points + ?, available_points = available_points + ?
-            WHERE user_id = ?
-            """,
-            reward_points,
-            reward_points,
-            user_id,
-        )
-        conn.cursor().execute(
-            "INSERT INTO points_records(user_id, points_change, reason, related_id) VALUES (?, ?, N'等级周奖励', ?)",
-            user_id,
-            reward_points,
-            activity_id,
-        )
+        points_dao.add_points(conn, user_id, reward_points, "等级周奖励", activity_id)
         return {"ok": True, "activityId": activity_id, "rewardPoints": reward_points, "rewardCouponName": None}
 
 
