@@ -11,9 +11,9 @@ from backend.app.main import app
 
 
 def pytest_collection_modifyitems(items) -> None:
-    """Existing API smoke tests also write data and therefore need test-db protection."""
+    """Existing database tests also write data and therefore need test-db protection."""
     for item in items:
-        if item.path.name == "test_api_smoke.py":
+        if item.path.name in {"test_api_smoke.py", "test_database_workflows.py"}:
             item.add_marker(pytest.mark.integration)
 
 
