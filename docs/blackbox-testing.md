@@ -53,3 +53,14 @@ Schemathesis 全路由契约检查可独立执行：
 覆盖矩阵中的 `gap` 是真实缺口，不计为已覆盖。当前自动生成层对全部 OpenAPI 操作执行契约检查；涉及成功写入、跨店权限和特定业务状态的接口仍应以显式临时资源用例逐项关闭矩阵缺口。
 
 本轮不包含 UI 自动化、真实并发压测或完整渗透测试。
+
+## 一次性白盒展示
+
+白盒展示提前运行并留存，验收现场无需再次执行：
+
+```powershell
+$env:EBOOKSTORE_ENV_FILE = '.env.test'
+.\.venv\Scripts\python.exe scripts/run_whitebox_showcase.py --archive
+```
+
+教师主要查看 `docs/reports/whitebox-showcase/readable-report.md`，逐行覆盖页面位于同目录的 `coverage-html/index.html`。
