@@ -8,7 +8,8 @@ from dotenv import load_dotenv
 
 
 BASE_DIR = Path(__file__).resolve().parents[1]
-load_dotenv(BASE_DIR / ".env")
+_env_file = Path(os.getenv("EBOOKSTORE_ENV_FILE", ".env"))
+load_dotenv(_env_file if _env_file.is_absolute() else BASE_DIR / _env_file)
 
 
 @dataclass(frozen=True)
