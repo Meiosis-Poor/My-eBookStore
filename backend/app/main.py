@@ -92,22 +92,31 @@ def sort_by_embedding(books: list[dict[str, Any]], target: list[float]) -> list[
     return sorted(books, key=lambda b: (distance(b), -(b.get("salesCount") or 0)))
 
 
-def title_token_coverage(title: str, keyword: str) -> float:
+def title_token_match_score(title: str, keyword: str) -> tuple[int, float]:
     normalized_title = (title or "").strip().casefold()
     tokens = list(dict.fromkeys((keyword or "").strip().casefold().split()))
     if not normalized_title or not tokens:
-        return 0.0
+        return 0, 0.0
 
     covered: set[int] = set()
+    matched_tokens = 0
     for token in tokens:
         start = 0
+        token_matched = False
         while True:
             match_at = normalized_title.find(token, start)
             if match_at < 0:
                 break
+            token_matched = True
             covered.update(range(match_at, match_at + len(token)))
             start = match_at + 1
-    return len(covered) / len(normalized_title)
+        if token_matched:
+            matched_tokens += 1
+    return matched_tokens, len(covered) / len(normalized_title)
+
+
+def title_token_coverage(title: str, keyword: str) -> float:
+    return title_token_match_score(title, keyword)[1]
 
 
 def sort_title_search_results(
@@ -115,13 +124,14 @@ def sort_title_search_results(
 ) -> list[dict[str, Any]]:
     ranked: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
     for book in books:
-        coverage = title_token_coverage(book.get("bookName") or "", keyword)
+        matched_tokens, coverage = title_token_match_score(book.get("bookName") or "", keyword)
         vec = load_embedding(book.get("embedding")) or embed_text(book.get("bookName") or "")
         distance = cosine_distance(target, vec)
         ranked.append(
             (
                 (
-                    0 if coverage > 0 else 1,
+                    0 if matched_tokens > 0 else 1,
+                    -matched_tokens,
                     -coverage,
                     distance,
                     -int(book.get("salesCount") or 0),
@@ -784,7 +794,10 @@ def admin_coupon(payload: dict[str, Any] = Body(...), user: dict[str, Any] = Dep
 @api.post("/admin/promotions/rewards")
 @api.put("/admin/promotions/rewards/{rewardId}")
 def admin_reward(payload: dict[str, Any] = Body(...), rewardId: Optional[int] = None, user: dict[str, Any] = Depends(require_roles("platform_admin"))) -> dict[str, Any]:
-    rewardId = promotion_dao.save_reward(payload, user["user_id"], rewardId)
+    try:
+        rewardId = promotion_dao.save_reward(payload, user["user_id"], rewardId)
+    except ValueError as exc:
+        fail(str(exc))
     return ok({"ok": True, "rewardId": rewardId})
 
 

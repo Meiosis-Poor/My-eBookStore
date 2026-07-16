@@ -87,8 +87,22 @@ async function renderRewards() {
 
   container.querySelectorAll('[data-action="redeem"]').forEach((btn) => {
     btn.addEventListener("click", async () => {
-      await PromotionAPI.redeemReward(btn.dataset.id);
-      showToast("兑换成功，请前往个人中心查看", "success");
+      if (btn.disabled) return;
+      btn.disabled = true;
+      try {
+        const result = await PromotionAPI.redeemReward(btn.dataset.id);
+        currentUser.availablePoints = result.availablePoints;
+        document.getElementById("userPointsText").textContent = result.availablePoints;
+        if (result.rewardType === "coupon" && result.coupon) {
+          showToast(`兑换成功，${result.coupon.couponName}已发放到账户`, "success");
+        } else {
+          showToast("实物奖品兑换成功", "success");
+        }
+        await Promise.all([renderRewards(), renderCoupons()]);
+      } catch (err) {
+        btn.disabled = false;
+        showToast(err.message || "兑换失败，请稍后重试", "danger");
+      }
     });
   });
 }

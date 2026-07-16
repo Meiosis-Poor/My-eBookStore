@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import date, datetime, timedelta
 from typing import Any
 
@@ -16,6 +17,8 @@ STATUS_ENABLED = "启用"
 COUPON_UNUSED = "未使用"
 COUPON_USED = "已使用"
 COUPON_EXPIRED = "已过期"
+REWARD_COUPON_ACTIVITY = "积分兑换代金券"
+REWARD_COUPON_VALID_END = datetime(2030, 6, 1, 23, 59, 59)
 
 
 def _front_coupon_type(db_value: str | None) -> str | None:
@@ -33,7 +36,153 @@ def _front_reward_type(db_value: str | None) -> str | None:
 
 
 def _db_reward_type(front_value: str | None) -> str:
-    return {"physical": "实物", "coupon": "代金券", "virtual": "虚拟商品"}.get(front_value or "", "实物")
+    reward_type = {"physical": "实物", "coupon": "代金券"}.get(front_value or "")
+    if not reward_type:
+        raise ValueError("奖品类型仅支持代金券或实物奖品")
+    return reward_type
+
+
+def _reward_coupon_amount(reward_name: str, explicit_amount: Any = None) -> float:
+    try:
+        if explicit_amount is not None and str(explicit_amount).strip() != "":
+            amount = float(explicit_amount)
+        else:
+            match = re.search(r"(\d+(?:\.\d+)?)\s*元", reward_name)
+            if not match:
+                raise ValueError("代金券奖品名称需包含面额，例如“5元代金券”")
+            amount = float(match.group(1))
+    except (TypeError, ValueError) as exc:
+        if isinstance(exc, ValueError) and "奖品名称" in str(exc):
+            raise
+        raise ValueError("代金券减免金额格式不正确") from exc
+    if amount <= 0:
+        raise ValueError("代金券面额必须大于0")
+    return amount
+
+
+def _reward_coupon_min_amount(value: Any) -> float:
+    try:
+        min_amount = float(value or 0)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("代金券使用门槛格式不正确") from exc
+    if min_amount < 0:
+        raise ValueError("代金券使用门槛不能小于0")
+    return min_amount
+
+
+def _reward_coupon_activity_id(conn: Any, admin_id: int) -> int:
+    cursor = conn.cursor()
+    activity_id = cursor.execute(
+        """
+        SELECT TOP 1 activity_id
+        FROM promotion_activities
+        WHERE activity_name = ?
+        ORDER BY activity_id DESC
+        """,
+        REWARD_COUPON_ACTIVITY,
+    ).fetchval()
+    if activity_id:
+        return int(activity_id)
+    return int(
+        cursor.execute(
+            """
+            INSERT INTO promotion_activities(
+                activity_name, activity_type, description, start_time, end_time, status, created_admin
+            )
+            OUTPUT INSERTED.activity_id
+            VALUES (?, N'积分兑换', N'积分兑换奖品对应的平台代金券',
+                    SYSDATETIME(), ?, N'已结束', ?)
+            """,
+            REWARD_COUPON_ACTIVITY,
+            REWARD_COUPON_VALID_END,
+            admin_id,
+        ).fetchone()[0]
+    )
+
+
+def _ensure_reward_coupon(
+    conn: Any,
+    reward_name: str,
+    admin_id: int,
+    *,
+    previous_name: str | None = None,
+    amount: Any = None,
+    min_amount: Any = None,
+) -> dict[str, Any]:
+    activity_id = _reward_coupon_activity_id(conn, admin_id)
+    cursor = conn.cursor()
+    lookup_name = previous_name or reward_name
+    coupon = one(
+        cursor.execute(
+            """
+            SELECT TOP 1 coupon_id AS couponId, coupon_name AS couponName,
+                   amount, min_amount AS minAmount,
+                   valid_start AS validStart, valid_end AS validEnd
+            FROM coupons
+            WHERE activity_id = ? AND coupon_name = ? AND coupon_type = N'平台券'
+            ORDER BY coupon_id DESC
+            """,
+            activity_id,
+            lookup_name,
+        )
+    )
+    if coupon and amount is None and previous_name is None:
+        cursor.execute(
+            "UPDATE coupons SET valid_end = ?, status = N'启用' WHERE coupon_id = ?",
+            REWARD_COUPON_VALID_END,
+            coupon["couponId"],
+        )
+        coupon["validEnd"] = REWARD_COUPON_VALID_END
+        return coupon
+
+    coupon_amount = _reward_coupon_amount(reward_name, amount)
+    coupon_min_amount = _reward_coupon_min_amount(min_amount)
+    if coupon:
+        cursor.execute(
+            """
+            UPDATE coupons
+            SET coupon_name = ?, amount = ?, min_amount = ?,
+                valid_end = ?, status = N'启用'
+            WHERE coupon_id = ?
+            """,
+            reward_name,
+            coupon_amount,
+            coupon_min_amount,
+            REWARD_COUPON_VALID_END,
+            coupon["couponId"],
+        )
+        coupon_id = int(coupon["couponId"])
+    else:
+        coupon_id = int(
+            cursor.execute(
+                """
+                INSERT INTO coupons(
+                    activity_id, coupon_name, coupon_type, amount, min_amount,
+                    valid_start, valid_end, status
+                )
+                OUTPUT INSERTED.coupon_id
+                VALUES (?, ?, N'平台券', ?, ?, SYSDATETIME(), ?, N'启用')
+                """,
+                activity_id,
+                reward_name,
+                coupon_amount,
+                coupon_min_amount,
+                REWARD_COUPON_VALID_END,
+            ).fetchone()[0]
+        )
+    saved = one(
+        cursor.execute(
+            """
+            SELECT coupon_id AS couponId, coupon_name AS couponName, amount,
+                   min_amount AS minAmount, valid_start AS validStart, valid_end AS validEnd
+            FROM coupons WHERE coupon_id = ?
+            """,
+            coupon_id,
+        )
+    )
+    if not saved:
+        raise ValueError("代金券奖品配置保存失败")
+    return saved
 
 
 def _procedure_error(exc: pyodbc.Error, fallback: str) -> ValueError:
@@ -234,17 +383,42 @@ def list_rewards() -> list[dict[str, Any]]:
         rows = many(
             conn.cursor().execute(
                 """
-                SELECT reward_id AS rewardId, reward_name AS rewardName,
-                       reward_type AS rewardType, required_points AS requiredPoints,
-                       required_level AS requiredLevel, stock
-                FROM point_rewards
-                WHERE status = N'启用'
-                ORDER BY required_points
-                """
+                SELECT r.reward_id AS rewardId, r.reward_name AS rewardName,
+                       r.reward_type AS rewardType, r.required_points AS requiredPoints,
+                       r.required_level AS requiredLevel, r.stock,
+                       coupon.amount AS couponAmount,
+                       coupon.min_amount AS couponMinAmount,
+                       coupon.valid_end AS couponValidEnd
+                FROM point_rewards r
+                OUTER APPLY (
+                    SELECT TOP 1 c.amount, c.min_amount, c.valid_end
+                    FROM coupons c
+                    JOIN promotion_activities a ON a.activity_id = c.activity_id
+                    WHERE a.activity_name = ?
+                      AND c.coupon_type = N'平台券'
+                      AND c.coupon_name = r.reward_name
+                    ORDER BY c.coupon_id DESC
+                ) coupon
+                WHERE r.status = N'启用'
+                ORDER BY r.required_points
+                """,
+                REWARD_COUPON_ACTIVITY,
             )
         )
     for row in rows:
         row["rewardType"] = _front_reward_type(row.get("rewardType"))
+        if row["rewardType"] == "coupon" and row.get("couponAmount") is None:
+            try:
+                row["couponAmount"] = _reward_coupon_amount(row["rewardName"])
+            except ValueError:
+                row["couponAmount"] = None
+            row["couponMinAmount"] = 0.0
+            row["couponValidEnd"] = REWARD_COUPON_VALID_END
+        if row.get("couponAmount") is not None:
+            row["couponAmount"] = float(row["couponAmount"])
+            row["couponMinAmount"] = float(row.get("couponMinAmount") or 0)
+        if row.get("couponValidEnd") is not None:
+            row["couponValidEnd"] = str(row["couponValidEnd"])
     return rows
 
 
@@ -273,6 +447,13 @@ def redeem_reward(user_id: int, reward_id: int) -> dict[str, Any]:
             raise ValueError("等级不够")
         if int(reward["stock"]) <= 0:
             raise ValueError("库存不足")
+        coupon = None
+        if reward["reward_type"] == "代金券":
+            coupon = _ensure_reward_coupon(
+                conn,
+                str(reward["reward_name"]),
+                int(reward["manage_admin"]),
+            )
         try:
             result = procedure_result(
                 cursor,
@@ -288,10 +469,51 @@ def redeem_reward(user_id: int, reward_id: int) -> dict[str, Any]:
             raise _procedure_error(exc, "兑换失败，请稍后重试") from exc
         if not result or not result.get("success"):
             raise ValueError("兑换失败，请稍后重试")
+        redemption_id = cursor.execute(
+            """
+            SELECT TOP 1 redemption_id
+            FROM reward_redemptions
+            WHERE user_id = ? AND reward_id = ?
+            ORDER BY redemption_id DESC
+            """,
+            user_id,
+            reward_id,
+        ).fetchval()
+        coupon_data = None
+        if coupon:
+            user_coupon_id = int(
+                cursor.execute(
+                    """
+                    INSERT INTO user_coupons(user_id, coupon_id, status)
+                    OUTPUT INSERTED.user_coupon_id
+                    VALUES (?, ?, N'未使用')
+                    """,
+                    user_id,
+                    coupon["couponId"],
+                ).fetchone()[0]
+            )
+            coupon_data = {
+                "couponId": int(coupon["couponId"]),
+                "userCouponId": user_coupon_id,
+                "couponName": coupon.get("couponName") or reward["reward_name"],
+                "couponType": "platform",
+                "amount": float(coupon.get("amount") or 0),
+                "minAmount": float(coupon.get("minAmount") or 0),
+                "validStart": str(coupon.get("validStart") or ""),
+                "validEnd": str(coupon.get("validEnd") or REWARD_COUPON_VALID_END),
+                "status": "未使用",
+            }
         available_points = cursor.execute(
             "SELECT available_points FROM ordinary_users WHERE user_id = ?", user_id
         ).fetchval()
-        return {"availablePoints": int(available_points or 0)}
+        return {
+            "availablePoints": int(available_points or 0),
+            "rewardId": int(reward_id),
+            "redemptionId": int(redemption_id or 0),
+            "rewardName": reward["reward_name"],
+            "rewardType": _front_reward_type(reward["reward_type"]),
+            "coupon": coupon_data,
+        }
 
 
 def join_activity(user_id: int, activity_id: int) -> dict[str, Any]:
@@ -629,36 +851,79 @@ def set_store_participation(store_id: int, activity_id: int, payload: dict[str, 
 
 def save_reward(payload: dict[str, Any], admin_id: int, reward_id: int | None = None) -> int:
     reward_type = _db_reward_type(payload.get("rewardType"))
+    reward_name = str(payload.get("rewardName") or "").strip()
+    if not reward_name:
+        raise ValueError("奖品名称不能为空")
+    try:
+        required_points = int(payload.get("requiredPoints"))
+        required_level = int(payload.get("requiredLevel") or 1)
+        stock = int(payload.get("stock") or 0)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("奖品积分、等级或库存格式不正确") from exc
+    if required_points < 0 or required_level < 1 or stock < 0:
+        raise ValueError("奖品积分、等级或库存不能小于允许值")
     with get_conn() as conn:
+        duplicate = conn.cursor().execute(
+            "SELECT 1 FROM point_rewards WHERE reward_name = ? AND reward_id <> COALESCE(?, -1)",
+            reward_name,
+            reward_id,
+        ).fetchone()
+        if duplicate:
+            raise ValueError("奖品名称已存在")
+        current = None
         if reward_id:
+            current = one(
+                conn.cursor().execute(
+                    "SELECT * FROM point_rewards WHERE reward_id = ?", reward_id
+                )
+            )
+            if not current:
+                raise ValueError("奖品不存在")
             conn.cursor().execute(
                 """
                 UPDATE point_rewards
                 SET reward_name = ?, reward_type = ?, required_points = ?, required_level = ?, stock = ?
                 WHERE reward_id = ?
                 """,
-                payload.get("rewardName"),
+                reward_name,
                 reward_type,
-                payload.get("requiredPoints"),
-                payload.get("requiredLevel") or 1,
-                payload.get("stock") or 0,
+                required_points,
+                required_level,
+                stock,
                 reward_id,
             )
-            return reward_id
-        return int(
-            conn.cursor()
-            .execute(
-                """
-                INSERT INTO point_rewards(reward_name, reward_type, required_points, required_level, stock, manage_admin)
-                OUTPUT INSERTED.reward_id
-                VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                payload.get("rewardName"),
-                reward_type,
-                payload.get("requiredPoints"),
-                payload.get("requiredLevel") or 1,
-                payload.get("stock") or 0,
-                admin_id,
+            saved_reward_id = int(reward_id)
+        else:
+            saved_reward_id = int(
+                conn.cursor()
+                .execute(
+                    """
+                    INSERT INTO point_rewards(
+                        reward_name, reward_type, required_points, required_level, stock, manage_admin
+                    )
+                    OUTPUT INSERTED.reward_id
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    reward_name,
+                    reward_type,
+                    required_points,
+                    required_level,
+                    stock,
+                    admin_id,
+                )
+                .fetchone()[0]
             )
-            .fetchone()[0]
-        )
+        if reward_type == "代金券":
+            _ensure_reward_coupon(
+                conn,
+                reward_name,
+                admin_id,
+                previous_name=(
+                    str(current["reward_name"])
+                    if current and current["reward_type"] == "代金券"
+                    else None
+                ),
+                amount=payload.get("couponAmount"),
+                min_amount=payload.get("couponMinAmount"),
+            )
+        return saved_reward_id

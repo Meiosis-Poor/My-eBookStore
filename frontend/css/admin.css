@@ -500,6 +500,27 @@
   border-color: var(--color-border);
 }
 
+#rewardModal .modal {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#rewardModal form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+#rewardModal .modal-body {
+  min-height: 0;
+  overflow-y: auto;
+}
+#rewardModal .modal-header,
+#rewardModal .modal-footer {
+  flex-shrink: 0;
+  background: var(--color-surface);
+}
+
 @media (max-width: 1100px) {
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }
   .panel-grid { grid-template-columns: 1fr; }

@@ -185,11 +185,21 @@ function rewardCardRowHtml(r) {
     <tr>
       <td>${r.rewardName}</td>
       <td>${r.rewardType === "coupon" ? "代金券" : "实物奖品"}</td>
+      <td>${r.rewardType === "coupon" ? `满 ${r.couponMinAmount || 0} 减 ${r.couponAmount || 0}` : "-"}</td>
       <td>${r.requiredPoints}</td>
       <td>Lv.${r.requiredLevel}</td>
       <td>${r.stock}</td>
       <td><div class="row-actions"><button data-action="edit-reward" data-id="${r.rewardId}">编辑</button></div></td>
     </tr>`;
+}
+
+function updateRewardCouponFields(form) {
+  const isCoupon = form.rewardType.value === "coupon";
+  document.getElementById("rewardCouponFields").classList.toggle("hidden", !isCoupon);
+  form.couponMinAmount.required = isCoupon;
+  form.couponAmount.required = isCoupon;
+  form.couponMinAmount.disabled = !isCoupon;
+  form.couponAmount.disabled = !isCoupon;
 }
 
 let rewardsCache = [];
@@ -212,7 +222,10 @@ function openRewardModal(reward) {
     form.requiredPoints.value = reward.requiredPoints;
     form.requiredLevel.value = reward.requiredLevel;
     form.stock.value = reward.stock;
+    form.couponMinAmount.value = reward.couponMinAmount ?? 0;
+    form.couponAmount.value = reward.couponAmount ?? "";
   }
+  updateRewardCouponFields(form);
   openModal("rewardModal");
 }
 
@@ -276,9 +289,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const addRewardBtn = document.getElementById("addRewardBtn");
   if (addRewardBtn) addRewardBtn.addEventListener("click", () => openRewardModal(null));
-  document.getElementById("rewardForm").addEventListener("submit", async (e) => {
+  const rewardForm = document.getElementById("rewardForm");
+  rewardForm.rewardType.addEventListener("change", () => updateRewardCouponFields(rewardForm));
+  rewardForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const form = e.target;
+    const isCoupon = form.rewardType.value === "coupon";
     await AdminAPI.promotions.saveReward({
       rewardId: editingRewardId || undefined,
       rewardName: form.rewardName.value.trim(),
@@ -286,6 +302,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       requiredPoints: Number(form.requiredPoints.value),
       requiredLevel: Number(form.requiredLevel.value),
       stock: Number(form.stock.value),
+      couponMinAmount: isCoupon ? Number(form.couponMinAmount.value) : undefined,
+      couponAmount: isCoupon ? Number(form.couponAmount.value) : undefined,
     });
     showToast("积分兑换奖品设置成功", "success");
     closeModal("rewardModal");

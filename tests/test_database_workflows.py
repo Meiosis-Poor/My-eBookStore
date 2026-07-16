@@ -144,6 +144,9 @@ def test_checkin_level_reward_and_coupon_expiration_procedures() -> None:
 
         redeemed = client.post(f"/api/promotions/rewards/{reward_id}/redeem", headers=headers)
         assert redeemed.status_code == 200, redeemed.json()
+        redeemed_data = redeemed.json()["data"]
+        assert redeemed_data["rewardType"] == "coupon"
+        assert redeemed_data["coupon"]["validEnd"].startswith("2030-06-01 23:59:59")
         expired = client.get("/api/promotions/coupons/my?status=expired", headers=headers)
         assert any(item["couponId"] == expired_coupon_id for item in expired.json()["data"])
 
@@ -175,6 +178,128 @@ def test_checkin_level_reward_and_coupon_expiration_procedures() -> None:
                 conn.cursor().execute("DELETE FROM user_coupons WHERE coupon_id = ?", expired_coupon_id)
                 conn.cursor().execute("DELETE FROM coupons WHERE coupon_id = ?", expired_coupon_id)
         _delete_customer(user_id)
+
+
+def test_admin_reward_coupon_configuration_and_redemption_delivery() -> None:
+    client = TestClient(app)
+    customer_ids: list[int] = []
+    coupon_reward_id = None
+    physical_reward_id = None
+    coupon_id = None
+    reward_name = f"测试满减券_{uuid4().hex[:8]}"
+    try:
+        admin_login = client.post(
+            "/api/auth/login",
+            json={"userName": "admin", "password": "Demo123", "role": "platform_admin"},
+        )
+        assert admin_login.status_code == 200, admin_login.json()
+        admin_headers = {"Authorization": f"Bearer {admin_login.json()['data']['token']}"}
+
+        created_coupon = client.post(
+            "/api/admin/promotions/rewards",
+            json={
+                "rewardName": reward_name,
+                "rewardType": "coupon",
+                "requiredPoints": 10,
+                "requiredLevel": 1,
+                "stock": 5,
+                "couponMinAmount": 100,
+                "couponAmount": 15,
+            },
+            headers=admin_headers,
+        )
+        assert created_coupon.status_code == 200, created_coupon.json()
+        coupon_reward_id = int(created_coupon.json()["data"]["rewardId"])
+
+        duplicate = client.post(
+            "/api/admin/promotions/rewards",
+            json={
+                "rewardName": reward_name,
+                "rewardType": "coupon",
+                "requiredPoints": 10,
+                "requiredLevel": 1,
+                "stock": 1,
+                "couponMinAmount": 0,
+                "couponAmount": 1,
+            },
+            headers=admin_headers,
+        )
+        assert duplicate.status_code == 400
+
+        created_physical = client.post(
+            "/api/admin/promotions/rewards",
+            json={
+                "rewardName": f"测试实物_{uuid4().hex[:8]}",
+                "rewardType": "physical",
+                "requiredPoints": 10,
+                "requiredLevel": 1,
+                "stock": 2,
+            },
+            headers=admin_headers,
+        )
+        assert created_physical.status_code == 200, created_physical.json()
+        physical_reward_id = int(created_physical.json()["data"]["rewardId"])
+
+        listed = client.get("/api/promotions/rewards").json()["data"]
+        configured = next(item for item in listed if item["rewardId"] == coupon_reward_id)
+        assert configured["couponMinAmount"] == 100
+        assert configured["couponAmount"] == 15
+        assert configured["couponValidEnd"].startswith("2030-06-01 23:59:59")
+
+        redemptions = []
+        for index in range(2):
+            user_id, headers = _register_customer(client, f"reward_{index}")
+            customer_ids.append(user_id)
+            with get_conn() as conn:
+                conn.cursor().execute(
+                    "UPDATE ordinary_users SET total_points = 100, available_points = 100 WHERE user_id = ?",
+                    user_id,
+                )
+            redeemed = client.post(
+                f"/api/promotions/rewards/{coupon_reward_id}/redeem", headers=headers
+            )
+            assert redeemed.status_code == 200, redeemed.json()
+            redemptions.append(redeemed.json()["data"])
+
+        assert redemptions[0]["coupon"]["couponId"] == redemptions[1]["coupon"]["couponId"]
+        assert redemptions[0]["coupon"]["userCouponId"] != redemptions[1]["coupon"]["userCouponId"]
+        assert redemptions[0]["coupon"]["amount"] == 15
+        assert redemptions[0]["coupon"]["minAmount"] == 100
+        assert redemptions[0]["coupon"]["validEnd"].startswith("2030-06-01 23:59:59")
+        coupon_id = int(redemptions[0]["coupon"]["couponId"])
+
+        first_user_headers = _register_customer(client, "physical_reward")
+        physical_user_id, physical_headers = first_user_headers
+        customer_ids.append(physical_user_id)
+        with get_conn() as conn:
+            conn.cursor().execute(
+                "UPDATE ordinary_users SET total_points = 100, available_points = 100 WHERE user_id = ?",
+                physical_user_id,
+            )
+        physical = client.post(
+            f"/api/promotions/rewards/{physical_reward_id}/redeem", headers=physical_headers
+        )
+        assert physical.status_code == 200, physical.json()
+        assert physical.json()["data"]["rewardType"] == "physical"
+        assert physical.json()["data"]["coupon"] is None
+        with get_conn() as conn:
+            issued_count = int(
+                conn.cursor().execute(
+                    "SELECT COUNT(*) FROM user_coupons WHERE coupon_id = ?", coupon_id
+                ).fetchval()
+            )
+            assert issued_count == 2
+    finally:
+        for user_id in customer_ids:
+            _delete_customer(user_id)
+        with get_conn() as conn:
+            cursor = conn.cursor()
+            if coupon_reward_id is not None:
+                cursor.execute("DELETE FROM point_rewards WHERE reward_id = ?", coupon_reward_id)
+            if physical_reward_id is not None:
+                cursor.execute("DELETE FROM point_rewards WHERE reward_id = ?", physical_reward_id)
+            if coupon_id is not None:
+                cursor.execute("DELETE FROM coupons WHERE coupon_id = ?", coupon_id)
 
 
 def test_refund_request_store_scope_and_approval_procedure() -> None:

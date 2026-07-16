@@ -87,7 +87,7 @@
               </div>
               <div class="data-table-wrap">
                 <table class="data-table">
-                  <thead><tr><th>奖品名称</th><th>类型</th><th>所需积分</th><th>所需等级</th><th>库存</th><th>操作</th></tr></thead>
+                  <thead><tr><th>奖品名称</th><th>类型</th><th>优惠规则</th><th>所需积分</th><th>所需等级</th><th>库存</th><th>操作</th></tr></thead>
                   <tbody id="rewardsTableBody"></tbody>
                 </table>
               </div>
@@ -161,6 +161,16 @@
               <option value="coupon">代金券</option>
               <option value="physical">实物奖品</option>
             </select>
+          </div>
+          <div class="form-row" id="rewardCouponFields">
+            <div class="form-group">
+              <label class="form-label">满多少元可用</label>
+              <input type="number" name="couponMinAmount" class="form-control" min="0" step="0.01" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">减免金额</label>
+              <input type="number" name="couponAmount" class="form-control" min="0.01" step="0.01" />
+            </div>
           </div>
           <div class="form-row">
             <div class="form-group">
