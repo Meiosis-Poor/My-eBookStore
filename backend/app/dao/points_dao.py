@@ -18,20 +18,9 @@ def add_points(conn: Any, user_id: int, points: int, reason: str, related_id: in
         """
         UPDATE ordinary_users
         SET total_points = total_points + ?,
-            available_points = available_points + ?,
-            level = CASE
-                WHEN total_points + ? >= 10000 THEN 5
-                WHEN total_points + ? >= 5000 THEN 4
-                WHEN total_points + ? >= 2500 THEN 3
-                WHEN total_points + ? >= 1250 THEN 2
-                ELSE 1
-            END
+            available_points = available_points + ?
         WHERE user_id = ?
         """,
-        points,
-        points,
-        points,
-        points,
         points,
         points,
         user_id,

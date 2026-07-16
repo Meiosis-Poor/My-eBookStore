@@ -192,3 +192,20 @@ My-eBookStore/
 - 自动化测试和冒烟联调脚本。
 
 后续如果需求继续扩展，可以在现有结构上继续补充真实支付、更加复杂的推荐策略、更多报表维度、风控规则和运营活动配置。
+
+## Docker 部署
+
+项目根目录的 `compose.yaml` 会启动 SQL Server、数据库初始化任务和 FastAPI 应用。生产配置保存在不会提交到 Git 的 `backend/.env`，可从 `backend/.env.sample` 创建。
+
+```bash
+docker compose up -d --build
+docker compose ps
+```
+
+应用仅监听宿主机回环地址 `http://127.0.0.1:8003`，适合由宿主机上的反向代理或 Cloudflare Tunnel 转发。停止服务时运行：
+
+```bash
+docker compose down
+```
+
+SQL Server 数据保存在 Compose 命名卷中；不要使用 `docker compose down -v`，除非明确需要删除全部业务数据并重新初始化。

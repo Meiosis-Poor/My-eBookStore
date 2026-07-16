@@ -1,0 +1,14 @@
+.git
+.gitignore
+.pytest_cache
+.ruff_cache
+.mypy_cache
+__pycache__
+*.py[cod]
+.venv
+venv
+node_modules
+dist
+build
+backend/.env
+backend/config/embedding_secrets.py

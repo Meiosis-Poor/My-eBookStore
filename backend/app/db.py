@@ -51,3 +51,11 @@ def normalize_value(value: Any) -> Any:
 
 def execute_scalar(conn: pyodbc.Connection, sql: str, *params: Any) -> Any:
     return conn.cursor().execute(sql, *params).fetchval()
+
+
+def procedure_result(cursor: pyodbc.Cursor, sql: str, *params: Any) -> dict[str, Any] | None:
+    cursor.execute(sql, *params)
+    while cursor.description is None:
+        if not cursor.nextset():
+            return None
+    return one(cursor)

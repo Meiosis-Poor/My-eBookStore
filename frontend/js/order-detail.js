@@ -37,7 +37,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     .map(
       (it) => `
     <div class="order-item-row">
-      <div class="mini-cover">${it.cover}</div>
+      <div class="mini-cover">${renderBookCover(it.cover, it.bookName)}</div>
       <div style="flex:1">
         <div style="font-weight:600">${it.bookName}</div>
         <div class="text-muted" style="font-size:12px">${formatPrice(it.unitPrice)} × ${it.quantity}</div>

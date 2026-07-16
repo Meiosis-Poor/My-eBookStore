@@ -24,12 +24,6 @@ REQUEST_TIMEOUT_SECONDS = 30.0
 
 
 def embed_text(text: str) -> list[float]:
-    """Embedding adapter.
-
-    Uses the private OpenAI-compatible embedding endpoint when configured in
-    backend/config/embedding_secrets.py. If secrets are absent, a deterministic
-    local fallback keeps development and tests runnable.
-    """
     if EMBEDDING_API_URL and EMBEDDING_API_KEY and EMBEDDING_MODEL:
         return _embed_text_remote(text or "")
     return _embed_text_fallback(text or "")

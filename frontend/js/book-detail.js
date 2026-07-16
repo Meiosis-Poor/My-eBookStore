@@ -9,7 +9,7 @@ function renderDetail(book) {
   currentBook = book;
   document.title = `${book.bookName} - My-eBookStore`;
 
-  document.getElementById("bookCoverIcon").textContent = book.cover || "📘";
+  setBookCover(document.getElementById("bookCoverIcon"), book.cover, book.bookName);
   document.getElementById("breadcrumbTitle").textContent = book.bookName;
   document.getElementById("bookTitle").textContent = book.bookName;
   document.getElementById("bookStoreName").textContent = book.storeName;

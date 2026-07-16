@@ -1,6 +1,7 @@
 backend/.env
 backend/.env.test
 backend/config/embedding_secrets.py
+.env
 database/*.local.sql
 __pycache__/
 *.py[cod]

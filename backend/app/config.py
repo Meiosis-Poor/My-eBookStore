@@ -25,7 +25,10 @@ class Settings:
     sqlserver_driver: str = os.getenv("SQLSERVER_DRIVER", "ODBC Driver 17 for SQL Server")
     sqlserver_server: str = os.getenv("SQLSERVER_SERVER", r"localhost\MYDB")
     sqlserver_database: str = os.getenv("SQLSERVER_DATABASE", "My_eBookStore")
+    sqlserver_username: str = os.getenv("SQLSERVER_USERNAME", "")
+    sqlserver_password: str = os.getenv("SQLSERVER_PASSWORD") or os.getenv("MSSQL_SA_PASSWORD", "")
     sqlserver_trusted_connection: str = os.getenv("SQLSERVER_TRUSTED_CONNECTION", "yes")
+    sqlserver_encrypt: str = os.getenv("SQLSERVER_ENCRYPT", "yes")
     sqlserver_trust_server_certificate: str = os.getenv("SQLSERVER_TRUST_SERVER_CERTIFICATE", "yes")
 
     jwt_secret_key: str = os.getenv("JWT_SECRET_KEY", "dev-only-change-me")
@@ -37,9 +40,18 @@ class Settings:
             f"DRIVER={{{self.sqlserver_driver}}}",
             f"SERVER={self.sqlserver_server}",
             f"DATABASE={database or self.sqlserver_database}",
-            f"Trusted_Connection={self.sqlserver_trusted_connection}",
-            f"TrustServerCertificate={self.sqlserver_trust_server_certificate}",
         ]
+        if self.sqlserver_username:
+            parts.extend(
+                [
+                    f"UID={self.sqlserver_username}",
+                    f"PWD={self.sqlserver_password}",
+                    f"Encrypt={self.sqlserver_encrypt}",
+                ]
+            )
+        else:
+            parts.append(f"Trusted_Connection={self.sqlserver_trusted_connection}")
+        parts.append(f"TrustServerCertificate={self.sqlserver_trust_server_certificate}")
         return ";".join(parts) + ";"
 
 

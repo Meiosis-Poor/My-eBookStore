@@ -47,7 +47,7 @@ function renderOrders(list) {
           .map(
             (it) => `
           <div class="order-item-row">
-            <div class="mini-cover">${it.cover}</div>
+            <div class="mini-cover">${renderBookCover(it.cover, it.bookName)}</div>
             <div style="flex:1">${it.bookName} × ${it.quantity}</div>
             <div>${formatPrice(it.unitPrice * it.quantity)}</div>
           </div>`

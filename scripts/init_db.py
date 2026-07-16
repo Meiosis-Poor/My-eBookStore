@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import re
 import sys
 from pathlib import Path
@@ -13,6 +14,14 @@ from backend.app.db import connect  # noqa: E402
 
 GO_RE = re.compile(r"^\s*GO\s*$", re.IGNORECASE | re.MULTILINE)
 CREATE_TABLE_RE = re.compile(r"CREATE\s+TABLE\s+([A-Za-z_][\w]*)", re.IGNORECASE)
+MIGRATIONS = (
+    ROOT / "database" / "01_buildlist.sql",
+    ROOT / "database" / "02_bulidindex.sql",
+    ROOT / "database" / "03_seed.sql",
+    ROOT / "database" / "04_procedures.sql",
+    ROOT / "database" / "05_triggers.sql",
+    ROOT / "database" / "99_test_seed.sql",
+)
 
 
 def split_batches(sql: str) -> list[str]:
@@ -20,10 +29,7 @@ def split_batches(sql: str) -> list[str]:
 
 
 def read_text(path: Path) -> str:
-    try:
-        return path.read_text(encoding="utf-8-sig")
-    except UnicodeDecodeError:
-        return path.read_text(encoding="gbk")
+    return path.read_text(encoding="utf-8-sig")
 
 
 def table_exists(conn, table_name: str) -> bool:
@@ -42,11 +48,58 @@ def execute_if_needed(conn, batch: str) -> None:
     conn.cursor().execute(batch)
 
 
-def main() -> None:
-    sql_path = ROOT / "database" / "01_buildlist.sql"
-    raw = read_text(sql_path)
-    batches = split_batches(raw)
+def ensure_migration_table(conn) -> None:
+    conn.cursor().execute(
+        """
+        IF OBJECT_ID(N'dbo.deployment_migrations', N'U') IS NULL
+        BEGIN
+            CREATE TABLE dbo.deployment_migrations(
+                migration_name NVARCHAR(255) NOT NULL PRIMARY KEY,
+                checksum CHAR(64) NOT NULL,
+                applied_time DATETIME2 NOT NULL DEFAULT SYSDATETIME()
+            )
+        END
+        """
+    )
 
+
+def applied_checksum(conn, migration_name: str) -> str | None:
+    row = conn.cursor().execute(
+        "SELECT checksum FROM dbo.deployment_migrations WHERE migration_name = ?",
+        migration_name,
+    ).fetchone()
+    return str(row[0]) if row else None
+
+
+def apply_migration(conn, path: Path) -> None:
+    migration_name = path.name
+    checksum = hashlib.sha256(path.read_bytes()).hexdigest()
+    previous = applied_checksum(conn, migration_name)
+    if previous == checksum:
+        print(f"skip applied migration: {migration_name}")
+        return
+    if previous is not None:
+        raise RuntimeError(
+            f"migration {migration_name} changed after it was applied; add a new migration instead"
+        )
+
+    for batch in split_batches(read_text(path)):
+        if batch.upper().startswith(("CREATE DATABASE", "USE ")):
+            continue
+        if migration_name == "01_buildlist.sql":
+            execute_if_needed(conn, batch)
+        else:
+            conn.cursor().execute(batch)
+
+    conn.cursor().execute(
+        "INSERT INTO dbo.deployment_migrations(migration_name, checksum) VALUES (?, ?)",
+        migration_name,
+        checksum,
+    )
+    print(f"applied migration: {migration_name}")
+
+
+def main() -> None:
     with connect(database="master", autocommit=True) as master:
         master.cursor().execute(
             f"IF DB_ID(N'{settings.sqlserver_database}') IS NULL CREATE DATABASE [{settings.sqlserver_database}]"
@@ -54,12 +107,10 @@ def main() -> None:
         print(f"database ready: {settings.sqlserver_database}")
 
     with connect(autocommit=True) as conn:
-        for batch in batches:
-            upper = batch.upper()
-            if upper.startswith("CREATE DATABASE") or upper.startswith("USE "):
-                continue
-            execute_if_needed(conn, batch)
-        print("schema initialization succeeded.")
+        ensure_migration_table(conn)
+        for migration in MIGRATIONS:
+            apply_migration(conn, migration)
+        print("database initialization succeeded.")
 
 
 if __name__ == "__main__":
