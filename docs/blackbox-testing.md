@@ -64,3 +64,14 @@ $env:EBOOKSTORE_ENV_FILE = '.env.test'
 ```
 
 教师主要查看 `docs/reports/whitebox-showcase/readable-report.md`，逐行覆盖页面位于同目录的 `coverage-html/index.html`。
+
+## Selenium 前端展示
+
+Chrome 端到端测试同样提前运行并归档：
+
+```powershell
+$env:EBOOKSTORE_ENV_FILE = '.env.test'
+.\.venv\Scripts\python.exe scripts/run_selenium_showcase.py --archive
+```
+
+教师主要查看 `docs/reports/selenium-showcase/readable-report.md`，原始浏览器测试结果和关键截图位于同一目录。
