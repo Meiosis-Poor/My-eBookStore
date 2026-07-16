@@ -10,8 +10,8 @@ CREATE TABLE users(
 	password_hash VARCHAR(255) NOT NULL,
 	phone VARCHAR(20) NULL,
 	email NVARCHAR(100) NULL,
-	user_type NVARCHAR(20) NOT NULL CHECK(user_type IN (N'��ͨ�û�',N'������Ա',N'ϵͳ����Ա')),
-	status NVARCHAR(20) NOT NULL DEFAULT N'����' CHECK(status IN (N'����',N'���')),
+	user_type NVARCHAR(20) NOT NULL CHECK(user_type IN (N'普通用户',N'书店管理员',N'系统管理员')),
+	status NVARCHAR(20) NOT NULL DEFAULT N'正常' CHECK(status IN (N'正常',N'封禁')),
 	created_time DATETIME2 NOT NULL DEFAULT SYSDATETIME()
 );
 GO
@@ -29,7 +29,7 @@ GO
 CREATE TABLE store_admins(
 	user_id INT PRIMARY KEY FOREIGN KEY REFERENCES users(user_id),
 	admin_name NVARCHAR(50) NOT NULL,
-	admin_status NVARCHAR(20) NOT NULL DEFAULT N'����' CHECK (admin_status IN (N'����',N'ͣ��'))
+	admin_status NVARCHAR(20) NOT NULL DEFAULT N'正常' CHECK (admin_status IN (N'正常',N'停用'))
 );
 GO
 
@@ -44,7 +44,7 @@ CREATE TABLE stores(
 	store_name NVARCHAR(50) NOT NULL UNIQUE,
 	user_id INT NOT NULL FOREIGN KEY REFERENCES users(user_id),
 	description NVARCHAR(500) NULL,
-	status NVARCHAR(20) NOT NULL DEFAULT N'����' CHECK (status IN (N'����',N'���')),
+	status NVARCHAR(20) NOT NULL DEFAULT N'正常' CHECK (status IN (N'正常',N'封禁')),
 	created_time DATETIME2 NOT NULL DEFAULT SYSDATETIME()
 );
 GO
@@ -53,12 +53,12 @@ CREATE TABLE book_categories(
 	category_id INT PRIMARY KEY IDENTITY(1,1),
 	category_name NVARCHAR(50) NOT NULL,
 	description NVARCHAR(500) NULL,
-	status NVARCHAR(20) NOT NULL DEFAULT N'����' CHECK (status IN (N'����',N'ͣ��'))
+	status NVARCHAR(20) NOT NULL DEFAULT N'启用' CHECK (status IN (N'启用',N'停用'))
 );
 GO
 
 CREATE TABLE book_infos(
-	book_info_id INT PRIMARY KEY IDENTITY(1,1),
+	book_info_id INT IDENTITY(1,1) CONSTRAINT PK_book_infos PRIMARY KEY,
 	category_id INT NOT NULL FOREIGN KEY REFERENCES book_categories(category_id),
 	book_name NVARCHAR(50) NOT NULL,
 	author NVARCHAR(50) NOT NULL,
@@ -68,7 +68,7 @@ CREATE TABLE book_infos(
 	description NVARCHAR(MAX) NULL,
 	cover_image NVARCHAR(500) NULL,
 	embedding NVARCHAR(MAX) NULL,
-	status NVARCHAR(20) NOT NULL DEFAULT N'����' CHECK (status IN (N'����',N'�¼�'))
+	status NVARCHAR(20) NOT NULL DEFAULT N'正常' CHECK (status IN (N'正常',N'下架'))
 );
 GO
 
@@ -80,7 +80,7 @@ CREATE TABLE book_items(
 	stock INT NOT NULL DEFAULT 0,
 	locked_stock INT NOT NULL DEFAULT 0,
 	sales_count INT NOT NULL DEFAULT 0,
-	status NVARCHAR(20) NOT NULL DEFAULT N'����' CHECK (status IN (N'����',N'�¼�')),
+	status NVARCHAR(20) NOT NULL DEFAULT N'在售' CHECK (status IN (N'在售',N'下架')),
 	created_time DATETIME2 NOT NULL DEFAULT SYSDATETIME()
 );
 GO
@@ -92,7 +92,7 @@ CREATE TABLE promotion_activities(
 	description NVARCHAR(MAX) NOT NULL,
 	start_time DATETIME2 NOT NULL,
 	end_time DATETIME2 NOT NULL,
-	status NVARCHAR(20) NOT NULL DEFAULT N'δ��ʼ' CHECK(status IN (N'δ��ʼ',N'������',N'�ѽ���')),
+	status NVARCHAR(20) NOT NULL DEFAULT N'未开始' CHECK(status IN (N'未开始',N'进行中',N'已结束')),
 	created_admin INT NOT NULL FOREIGN KEY REFERENCES system_admins(user_id)
 );
 GO
@@ -126,8 +126,8 @@ CREATE TABLE orders(
 	total_amount DECIMAL(10,2) NOT NULL,
 	discount_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
 	actual_amount DECIMAL(10,2) NOT NULL,
-	order_status NVARCHAR(20) NOT NULL DEFAULT N'��֧��' CHECK (order_status IN (N'��֧��',N'�����',N'��ȡ��',N'���˿�')),
-	payment_status NVARCHAR(20) NOT NULL DEFAULT N'δ֧��' CHECK (payment_status IN (N'δ֧��',N'��֧��',N'���˿�')),
+	order_status NVARCHAR(20) NOT NULL DEFAULT N'待支付' CHECK (order_status IN (N'待支付',N'已完成',N'已取消',N'已退款')),
+	payment_status NVARCHAR(20) NOT NULL DEFAULT N'未支付' CHECK (payment_status IN (N'未支付',N'已支付',N'已退款')),
 	receiver_name NVARCHAR(50) NOT NULL,
 	receiver_phone VARCHAR(20) NOT NULL,
 	receiver_addr NVARCHAR(200) NOT NULL,
@@ -152,7 +152,8 @@ CREATE TABLE payment_records(
 	user_id INT NOT NULL FOREIGN KEY REFERENCES users(user_id),
 	payment_no NVARCHAR(50) NOT NULL,
 	amount DECIMAL(10,2) NOT NULL,
-	payment_status NVARCHAR(20) NOT NULL DEFAULT N'δ֧��' CHECK (payment_status IN (N'δ֧��',N'��֧��',N'���˿�')),
+	payment_method NVARCHAR(20) NOT NULL,
+	payment_status NVARCHAR(20) NOT NULL DEFAULT N'未支付' CHECK (payment_status IN (N'未支付',N'已支付',N'已退款')),
 	paid_time DATETIME2 NULL,
 	created_time DATETIME2 NOT NULL DEFAULT SYSDATETIME()
 );
@@ -166,7 +167,7 @@ CREATE TABLE refund_records(
 	refund_no NVARCHAR(50) NOT NULL,
 	refund_amount DECIMAL(10,2) NOT NULL,
 	refund_reason NVARCHAR(MAX) NULL,
-	refund_status NVARCHAR(20) NOT NULL DEFAULT N'������' CHECK (refund_status IN (N'������',N'���˿�',N'�Ѿܾ�')),
+	refund_status NVARCHAR(20) NOT NULL DEFAULT N'处理中' CHECK (refund_status IN (N'处理中',N'已退款',N'已拒绝')),
 	request_time DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
 	refund_time DATETIME2 NULL
 );
@@ -176,13 +177,13 @@ CREATE TABLE coupons(
 	coupon_id INT PRIMARY KEY IDENTITY(1,1),
 	activity_id INT NOT NULL FOREIGN KEY REFERENCES promotion_activities(activity_id),
 	coupon_name NVARCHAR(50) NOT NULL,
-	coupon_type NVARCHAR(20) NOT NULL CHECK (coupon_type IN (N'ƽ̨ȯ',N'����ȯ')),
+	coupon_type NVARCHAR(20) NOT NULL CHECK (coupon_type IN (N'平台券',N'店铺券')),
 	store_id INT NULL FOREIGN KEY REFERENCES stores(store_id),
 	amount DECIMAL(10,2) NOT NULL,
 	min_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
 	valid_start DATETIME2 NOT NULL,
 	valid_end DATETIME2 NOT NULL,
-	status NVARCHAR(20) NOT NULL DEFAULT N'����' CHECK (status IN (N'����',N'ͣ��'))
+	status NVARCHAR(20) NOT NULL DEFAULT N'启用' CHECK (status IN (N'启用',N'停用'))
 );
 GO
 
@@ -190,7 +191,7 @@ CREATE TABLE user_coupons(
 	user_coupon_id INT PRIMARY KEY IDENTITY(1,1),
 	user_id INT NOT NULL FOREIGN KEY REFERENCES users(user_id),
 	coupon_id INT NOT NULL FOREIGN KEY REFERENCES coupons(coupon_id),
-	status NVARCHAR(20) NOT NULL DEFAULT N'δʹ��' CHECK (status IN (N'δʹ��',N'��ʹ��',N'�ѹ���')),
+	status NVARCHAR(20) NOT NULL DEFAULT N'未使用' CHECK (status IN (N'未使用',N'已使用',N'已过期')),
 	received_time DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
 	used_time DATETIME2 NULL,
 	order_id INT NULL FOREIGN KEY REFERENCES orders(order_id)
@@ -200,11 +201,11 @@ GO
 CREATE TABLE point_rewards(
 	reward_id INT PRIMARY KEY IDENTITY(1,1),
 	reward_name NVARCHAR(50) NOT NULL,
-	reward_type NVARCHAR(20) NOT NULL CHECK (reward_type IN (N'ʵ��',N'����ȯ',N'������Ʒ')),
+	reward_type NVARCHAR(20) NOT NULL CHECK (reward_type IN (N'实物',N'代金券',N'虚拟商品')),
 	required_points INT NOT NULL,
 	required_level INT NOT NULL DEFAULT 1,
 	stock INT NOT NULL DEFAULT 0,
-	status NVARCHAR(20) NOT NULL DEFAULT N'����' CHECK (status IN (N'����',N'ͣ��')),
+	status NVARCHAR(20) NOT NULL DEFAULT N'启用' CHECK (status IN (N'启用',N'停用')),
 	manage_admin INT NOT NULL FOREIGN KEY REFERENCES system_admins(user_id)
 );
 GO
@@ -214,7 +215,7 @@ CREATE TABLE reward_redemptions(
 	user_id INT NOT NULL FOREIGN KEY REFERENCES users(user_id),
 	reward_id INT NOT NULL FOREIGN KEY REFERENCES point_rewards(reward_id),
 	used_points INT NOT NULL,
-	status NVARCHAR(20) NOT NULL DEFAULT N'�����' CHECK (status IN (N'�����',N'��ȡ��')),
+	status NVARCHAR(20) NOT NULL DEFAULT N'已完成' CHECK (status IN (N'已完成',N'已取消')),
 	redeemed_time DATETIME2 NOT NULL DEFAULT SYSDATETIME()
 );
 GO
@@ -222,7 +223,7 @@ GO
 CREATE TABLE store_activity_participation(
 	store_id INT NOT NULL FOREIGN KEY REFERENCES stores(store_id),
 	activity_id INT NOT NULL FOREIGN KEY REFERENCES promotion_activities(activity_id),
-	participate_status NVARCHAR(20) NOT NULL DEFAULT N'�Ѳ���' CHECK (participate_status IN (N'�Ѳ���',N'���˳�')),
+	participate_status NVARCHAR(20) NOT NULL DEFAULT N'已参与' CHECK (participate_status IN (N'已参与',N'已退出')),
 	join_time DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
 	coupon_amount DECIMAL(10,2) NULL,
 	coupon_quantity INT NULL,
@@ -237,7 +238,7 @@ CREATE TABLE activity_books(
 	activity_price DECIMAL(10,2) NULL,
 	discount_rate DECIMAL(5,2) NULL,
 	activity_stock INT NULL,
-	status NVARCHAR(20) NOT NULL DEFAULT N'������' CHECK (status IN (N'������',N'�ѽ���')),
+	status NVARCHAR(20) NOT NULL DEFAULT N'参与中' CHECK (status IN (N'参与中',N'已结束')),
 	PRIMARY KEY(store_id,activity_id,book_item_id),
 	FOREIGN KEY(store_id,activity_id) REFERENCES store_activity_participation(store_id,activity_id)
 );
@@ -259,7 +260,7 @@ CREATE TABLE points_records(
 	record_id INT PRIMARY KEY IDENTITY(1,1),
 	user_id INT NOT NULL FOREIGN KEY REFERENCES users(user_id),
 	points_change INT NOT NULL,
-	reason NVARCHAR(50) NOT NULL CHECK (reason IN (N'ǩ��',N'����',N'�һ���Ʒ',N'�ȼ��ܽ���')),
+	reason NVARCHAR(50) NOT NULL CHECK (reason IN (N'签到',N'购买',N'兑换奖品',N'等级周奖励')),
 	related_id INT NOT NULL,
 	created_time DATETIME2 NOT NULL DEFAULT SYSDATETIME()
 );
@@ -303,14 +304,14 @@ CREATE TABLE store_blacklists(
 	created_time DATETIME2 NOT NULL DEFAULT SYSDATETIME()
 );
 GO
-
 CREATE TABLE recommendation_settings(
-	setting_id INT NOT NULL PRIMARY KEY DEFAULT 1 CHECK (setting_id=1),
+	setting_id INT NOT NULL CONSTRAINT PK_recommendation_settings PRIMARY KEY DEFAULT 1,
 	guess_weight FLOAT NOT NULL DEFAULT 1,
 	hot_weight FLOAT NOT NULL DEFAULT 1,
 	search_embedding_enabled BIT NOT NULL DEFAULT 1,
 	detail_same_store_enabled BIT NOT NULL DEFAULT 1,
-	updated_time DATETIME2 NOT NULL DEFAULT SYSDATETIME()
+	updated_time DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+	CONSTRAINT CK_recommendation_settings_singleton CHECK(setting_id = 1)
 );
 GO
 

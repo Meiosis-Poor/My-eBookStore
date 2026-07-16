@@ -102,6 +102,19 @@ def main() -> None:
     )
     temp_token, _ = login(client, temp_name, "Demo123", "customer")
 
+    address = assert_ok(
+        client.post(
+            "/api/addresses",
+            json={
+                "receiverName": "Smoke Test",
+                "phone": "13800000000",
+                "addressDetail": "Smoke test address",
+            },
+            headers=auth(temp_token),
+        ),
+        "address create",
+    )["data"]
+
     assert_ok(client.post("/api/cart", json={"bookItemId": book_item_id, "quantity": 1}, headers=auth(temp_token)), "cart add")
     cart = assert_ok(client.get("/api/cart", headers=auth(temp_token)), "cart list")["data"]
     assert any(int(item["bookItemId"]) == book_item_id for item in cart)
@@ -115,9 +128,7 @@ def main() -> None:
             "/api/orders",
             json={
                 "cartItemIds": [book_item_id],
-                "receiverName": "Smoke Test",
-                "receiverPhone": "13800000000",
-                "receiverAddress": "Smoke test address",
+                "addressId": address["addressId"],
             },
             headers=auth(temp_token),
         ),

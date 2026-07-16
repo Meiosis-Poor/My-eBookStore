@@ -5,7 +5,9 @@ from __future__ import annotations
 from datetime import date, datetime, timedelta
 from typing import Any
 
-from ..db import get_conn, many, one
+import pyodbc
+
+from ..db import get_conn, many, one, procedure_result
 from . import points_dao
 
 
@@ -34,8 +36,17 @@ def _db_reward_type(front_value: str | None) -> str:
     return {"physical": "实物", "coupon": "代金券", "virtual": "虚拟商品"}.get(front_value or "", "实物")
 
 
-def _checkin_reward(continuous_days: int) -> int:
-    return [5, 5, 10, 10, 10, 15, 30][(continuous_days - 1) % 7]
+def _procedure_error(exc: pyodbc.Error, fallback: str) -> ValueError:
+    message = " ".join(str(part) for part in getattr(exc, "args", ()))
+    known_messages = (
+        "今日已签到，请勿重复操作",
+        "用户资料不存在",
+        "奖品不存在",
+        "积分不足",
+        "等级不够",
+        "库存不足",
+    )
+    return ValueError(next((known for known in known_messages if known in message), fallback))
 
 
 def _store_participation_summary(conn: Any, store_id: int, activity_id: int) -> dict[str, Any]:
@@ -132,94 +143,39 @@ def list_activities(admin_view: bool = False, store_id: int | None = None) -> li
 
 
 def checkin(user_id: int) -> dict[str, Any]:
-    today = date.today()
-    yesterday = today - timedelta(days=1)
     with get_conn() as conn:
         cursor = conn.cursor()
-        if cursor.execute(
-            "SELECT 1 FROM checkin_record WITH (UPDLOCK, HOLDLOCK) WHERE user_id = ? AND checkin_date = ?",
-            user_id,
-            today,
-        ).fetchone():
-            raise ValueError("今日已签到，请勿重复操作")
-
-        previous = cursor.execute(
-            """
-            SELECT TOP 1 continuous_checkin_days
-            FROM checkin_record
-            WHERE user_id = ? AND checkin_date = ?
-            ORDER BY checkin_id DESC
-            """,
-            user_id,
-            yesterday,
-        ).fetchone()
-        days = int(previous[0]) + 1 if previous else 1
-        reward_points = _checkin_reward(days)
-        activity_id = cursor.execute(
-            """
-            SELECT TOP 1 activity_id
-            FROM promotion_activities
-            WHERE activity_name = N'每日签到' AND status = N'进行中'
-            ORDER BY activity_id DESC
-            """,
-        ).fetchval()
-        checkin_id = int(
-            cursor.execute(
+        try:
+            result = procedure_result(
+                cursor,
                 """
-                INSERT INTO checkin_record(
-                    user_id, activity_id, checkin_date, continuous_checkin_days, reward_points
-                )
-                OUTPUT INSERTED.checkin_id
-                VALUES (?, ?, ?, ?, ?)
+                DECLARE @success BIT, @continuous_days INT, @reward_points INT, @got_coupon BIT;
+                EXEC sp_CheckIn
+                    @user_id = ?, @success = @success OUTPUT,
+                    @continuous_days = @continuous_days OUTPUT,
+                    @reward_points = @reward_points OUTPUT,
+                    @got_coupon = @got_coupon OUTPUT;
+                SELECT @success AS success, @continuous_days AS continuousDays,
+                       @reward_points AS rewardPoints, @got_coupon AS gotCoupon;
                 """,
                 user_id,
-                activity_id,
-                today,
-                days,
-                reward_points,
-            ).fetchone()[0]
-        )
-        cursor.execute(
-            "UPDATE ordinary_users SET continuous_checkin_days = ? WHERE user_id = ?",
-            days,
-            user_id,
-        )
-        points_dao.add_points(conn, user_id, reward_points, "签到", checkin_id)
-
-        got_coupon = False
-        coupon_names: list[str] = []
-        if days % 7 == 0:
-            coupon_names.append("连续7天签到券")
-        if days % 30 == 0:
-            coupon_names.append("连续30天签到券")
-        for coupon_name in coupon_names:
-            coupon_rows = cursor.execute(
-                "SELECT coupon_id FROM coupons WHERE coupon_name = ? AND status = N'启用'",
-                coupon_name,
-            ).fetchall()
-            for coupon_row in coupon_rows:
-                cursor.execute(
-                    "INSERT INTO user_coupons(user_id, coupon_id, status) VALUES (?, ?, N'未使用')",
-                    user_id,
-                    coupon_row[0],
-                )
-                got_coupon = True
-        return {"continuousDays": days, "rewardPoints": reward_points, "gotCoupon": got_coupon}
+            )
+        except pyodbc.Error as exc:
+            raise _procedure_error(exc, "签到失败，请稍后重试") from exc
+        if not result or not result.get("success"):
+            raise ValueError("签到失败，请稍后重试")
+        return {
+            "continuousDays": int(result.get("continuousDays") or 0),
+            "rewardPoints": int(result.get("rewardPoints") or 0),
+            "gotCoupon": bool(result.get("gotCoupon")),
+        }
 
 
 def list_user_coupons(user_id: int, status: str = "unused") -> list[dict[str, Any]]:
     db_status = {"unused": COUPON_UNUSED, "used": COUPON_USED, "expired": COUPON_EXPIRED}.get(status, COUPON_UNUSED)
     extra_where = "AND c.status = N'启用' AND c.valid_end >= SYSDATETIME()" if status == "unused" else ""
     with get_conn() as conn:
-        conn.cursor().execute(
-            """
-            UPDATE uc
-            SET status = N'已过期'
-            FROM user_coupons uc
-            JOIN coupons c ON c.coupon_id = uc.coupon_id
-            WHERE uc.status = N'未使用' AND c.valid_end < SYSDATETIME()
-            """
-        )
+        conn.cursor().execute("EXEC sp_ExpireCoupons")
         rows = many(
             conn.cursor().execute(
                 f"""
@@ -317,31 +273,25 @@ def redeem_reward(user_id: int, reward_id: int) -> dict[str, Any]:
             raise ValueError("等级不够")
         if int(reward["stock"]) <= 0:
             raise ValueError("库存不足")
-        cursor.execute(
-            "UPDATE ordinary_users SET available_points = available_points - ? WHERE user_id = ?",
-            reward["required_points"],
-            user_id,
-        )
-        cursor.execute("UPDATE point_rewards SET stock = stock - 1 WHERE reward_id = ?", reward_id)
-        redemption_id = int(
-            cursor.execute(
+        try:
+            result = procedure_result(
+                cursor,
                 """
-                INSERT INTO reward_redemptions(user_id, reward_id, used_points)
-                OUTPUT INSERTED.redemption_id
-                VALUES (?, ?, ?)
+                DECLARE @success BIT;
+                EXEC sp_RedeemReward @user_id = ?, @reward_id = ?, @success = @success OUTPUT;
+                SELECT @success AS success;
                 """,
                 user_id,
                 reward_id,
-                reward["required_points"],
-            ).fetchone()[0]
-        )
-        cursor.execute(
-            "INSERT INTO points_records(user_id, points_change, reason, related_id) VALUES (?, ?, N'兑换奖品', ?)",
-            user_id,
-            -int(reward["required_points"]),
-            redemption_id,
-        )
-        return {"availablePoints": int(profile["available_points"]) - int(reward["required_points"])}
+            )
+        except pyodbc.Error as exc:
+            raise _procedure_error(exc, "兑换失败，请稍后重试") from exc
+        if not result or not result.get("success"):
+            raise ValueError("兑换失败，请稍后重试")
+        available_points = cursor.execute(
+            "SELECT available_points FROM ordinary_users WHERE user_id = ?", user_id
+        ).fetchval()
+        return {"availablePoints": int(available_points or 0)}
 
 
 def join_activity(user_id: int, activity_id: int) -> dict[str, Any]:

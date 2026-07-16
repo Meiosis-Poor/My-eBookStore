@@ -92,6 +92,48 @@ def sort_by_embedding(books: list[dict[str, Any]], target: list[float]) -> list[
     return sorted(books, key=lambda b: (distance(b), -(b.get("salesCount") or 0)))
 
 
+def title_token_coverage(title: str, keyword: str) -> float:
+    normalized_title = (title or "").strip().casefold()
+    tokens = list(dict.fromkeys((keyword or "").strip().casefold().split()))
+    if not normalized_title or not tokens:
+        return 0.0
+
+    covered: set[int] = set()
+    for token in tokens:
+        start = 0
+        while True:
+            match_at = normalized_title.find(token, start)
+            if match_at < 0:
+                break
+            covered.update(range(match_at, match_at + len(token)))
+            start = match_at + 1
+    return len(covered) / len(normalized_title)
+
+
+def sort_title_search_results(
+    books: list[dict[str, Any]], keyword: str, target: list[float]
+) -> list[dict[str, Any]]:
+    ranked: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
+    for book in books:
+        coverage = title_token_coverage(book.get("bookName") or "", keyword)
+        vec = load_embedding(book.get("embedding")) or embed_text(book.get("bookName") or "")
+        distance = cosine_distance(target, vec)
+        ranked.append(
+            (
+                (
+                    0 if coverage > 0 else 1,
+                    -coverage,
+                    distance,
+                    -int(book.get("salesCount") or 0),
+                    int(book.get("bookItemId") or 0),
+                ),
+                book,
+            )
+        )
+    ranked.sort(key=lambda item: item[0])
+    return [book for _, book in ranked]
+
+
 def hot_books(limit: int) -> list[dict[str, Any]]:
     rows = book_dao.list_books(sort="sales")
     return [normalize_book(row) for row in rows[:limit]]
@@ -122,6 +164,11 @@ def guess_books(user_id: int | None, limit: int) -> list[dict[str, Any]]:
 def require_store_owner(user: dict[str, Any], store_id: int) -> None:
     if DB_TO_ROLE.get(user["user_type"]) != "platform_admin" and user.get("store_id") != store_id:
         fail("无权限维护该店铺", 403)
+
+
+def require_store_access(user: dict[str, Any] | None, store_id: int) -> None:
+    if user and store_dao.is_blacklisted(store_id, user["user_id"]):
+        fail("您已被该店铺加入黑名单，无法访问或购买该店商品", 403)
 
 
 @api.get("/health")
@@ -215,10 +262,9 @@ def list_books(
         sort=sort,
         in_stock_only=bool(inStockOnly),
     )
-    search_embedding_enabled = stats_dao.recommendation_settings().get("searchEmbeddingEnabled", True)
-    if search_type == "title" and keyword and sort == "default" and search_embedding_enabled:
+    if search_type == "title" and keyword and sort == "default":
         keyword_embedding = embed_text(keyword)
-        rows = sort_by_embedding(rows, keyword_embedding)
+        rows = sort_title_search_results(rows, keyword, keyword_embedding)
     items = [normalize_book(row) for row in page_slice(rows, page, pageSize)]
     return ok({"list": items, "total": len(rows)})
 
@@ -291,7 +337,8 @@ def similar_books(bookItemId: int) -> dict[str, Any]:
 
 
 @api.get("/stores/{storeId}")
-def store_detail(storeId: int) -> dict[str, Any]:
+def store_detail(storeId: int, user: Optional[dict[str, Any]] = Depends(optional_user)) -> dict[str, Any]:
+    require_store_access(user, storeId)
     row = store_dao.get_detail(storeId)
     if not row:
         fail("店铺不存在", 404)
@@ -299,7 +346,14 @@ def store_detail(storeId: int) -> dict[str, Any]:
 
 
 @api.get("/stores/{storeId}/books")
-def store_books(storeId: int, sort: str = "default", page: int = 1, pageSize: int = 24) -> dict[str, Any]:
+def store_books(
+    storeId: int,
+    sort: str = "default",
+    page: int = 1,
+    pageSize: int = 24,
+    user: Optional[dict[str, Any]] = Depends(optional_user),
+) -> dict[str, Any]:
+    require_store_access(user, storeId)
     rows = book_dao.list_books(sort=sort, store_id=storeId)
     return ok({"list": [normalize_book(row) for row in page_slice(rows, page, pageSize)], "total": len(rows)})
 
@@ -343,6 +397,10 @@ def cart_list(user: dict[str, Any] = Depends(current_user)) -> dict[str, Any]:
 def cart_add(payload: dict[str, Any] = Body(...), user: dict[str, Any] = Depends(current_user)) -> dict[str, Any]:
     book_item_id = int(payload.get("bookItemId"))
     quantity = max(int(payload.get("quantity") or 1), 1)
+    book = book_dao.get_detail(book_item_id)
+    if not book:
+        fail("图书不存在或已下架", 404)
+    require_store_access(user, int(book["storeId"]))
     stock = cart_dao.get_stock(book_item_id)
     if stock is None:
         fail("图书不存在或已下架", 404)
@@ -620,18 +678,33 @@ def admin_orders(status: str = "all", keyword: Optional[str] = None, page: int =
 
 
 @api.put("/admin/orders/{orderId}/status")
-def admin_order_status(orderId: int, payload: dict[str, Any] = Body(...), _: dict[str, Any] = Depends(require_roles("seller", "platform_admin"))) -> dict[str, Any]:
+def admin_order_status(
+    orderId: int,
+    payload: dict[str, Any] = Body(...),
+    user: dict[str, Any] = Depends(require_roles("seller", "platform_admin")),
+) -> dict[str, Any]:
     db_status = STATUS_TO_DB.get(payload.get("status"), payload.get("status"))
-    order_dao.update_status(orderId, db_status)
+    store_id = user["store_id"] if DB_TO_ROLE.get(user["user_type"]) == "seller" else None
+    try:
+        order_dao.update_status(orderId, db_status, store_id)
+    except ValueError as exc:
+        fail(str(exc), 403 if "无权限" in str(exc) else 400)
     return ok({"ok": True})
 
 
 @api.post("/admin/orders/{orderId}/refund/{action}")
-def admin_refund(orderId: int, action: str, _: dict[str, Any] = Depends(require_roles("seller", "platform_admin"))) -> dict[str, Any]:
+def admin_refund(
+    orderId: int,
+    action: str,
+    user: dict[str, Any] = Depends(require_roles("seller", "platform_admin")),
+) -> dict[str, Any]:
+    if action not in {"approve", "reject"}:
+        fail("退款处理类型不正确")
+    store_id = user["store_id"] if DB_TO_ROLE.get(user["user_type"]) == "seller" else None
     try:
-        order_dao.handle_refund(orderId, action == "approve")
+        order_dao.handle_refund(orderId, action == "approve", store_id)
     except ValueError as exc:
-        fail(str(exc))
+        fail(str(exc), 403 if "无权限" in str(exc) else 400)
     return ok({"ok": True})
 
 

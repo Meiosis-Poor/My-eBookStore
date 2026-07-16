@@ -2,41 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import date
+import json
 from typing import Any, Optional
 
-from ..db import get_conn, many, one
-from . import points_dao
+import pyodbc
 
-
-def _next_no(cursor: Any, sequence_type: str) -> str:
-    today = date.today()
-    row = cursor.execute(
-        """
-        SELECT current_no
-        FROM daily_sequences WITH (UPDLOCK, HOLDLOCK)
-        WHERE seq_date = ? AND seq_type = ?
-        """,
-        today,
-        sequence_type,
-    ).fetchone()
-    if row:
-        sequence = int(row[0]) + 1
-        cursor.execute(
-            "UPDATE daily_sequences SET current_no = ? WHERE seq_date = ? AND seq_type = ?",
-            sequence,
-            today,
-            sequence_type,
-        )
-    else:
-        sequence = 1
-        cursor.execute(
-            "INSERT INTO daily_sequences(seq_date, seq_type, current_no) VALUES (?, ?, ?)",
-            today,
-            sequence_type,
-            sequence,
-        )
-    return f"{sequence_type}{today:%Y%m%d}{sequence:06d}"
+from ..db import get_conn, many, one, procedure_result
 
 
 def _payment_method_name(method: str | None) -> str:
@@ -45,46 +16,33 @@ def _payment_method_name(method: str | None) -> str:
     return mapping.get(value, value or "支付宝")
 
 
-def _has_payment_method(cursor: Any) -> bool:
-    return cursor.execute(
-        "SELECT CASE WHEN COL_LENGTH(N'dbo.payment_records', N'payment_method') IS NULL THEN 0 ELSE 1 END"
-    ).fetchval() == 1
+def _procedure_error(exc: pyodbc.Error, fallback: str) -> ValueError:
+    message = " ".join(str(part) for part in getattr(exc, "args", ()))
+    known_messages = (
+        "部分书目库存不足或已下架",
+        "代金券不可用或已被使用",
+        "收货地址不存在",
+        "订单状态异常，无法支付",
+        "订单明细为空，无法支付",
+        "部分商品库存不足，无法支付",
+        "未找到可批准的退款申请",
+    )
+    return ValueError(next((known for known in known_messages if known in message), fallback))
 
 
-def _insert_payment_record(
-    cursor: Any,
-    order_id: int,
-    user_id: int,
-    payment_no: str,
-    amount: float,
-    payment_method: str,
-) -> int:
-    if _has_payment_method(cursor):
-        row = cursor.execute(
-            """
-            INSERT INTO payment_records(order_id, user_id, payment_no, amount, payment_method, payment_status)
-            OUTPUT INSERTED.payment_id
-            VALUES (?, ?, ?, ?, ?, N'未支付')
-            """,
-            order_id,
-            user_id,
-            payment_no,
-            amount,
-            _payment_method_name(payment_method),
-        ).fetchone()
-    else:
-        row = cursor.execute(
-            """
-            INSERT INTO payment_records(order_id, user_id, payment_no, amount, payment_status)
-            OUTPUT INSERTED.payment_id
-            VALUES (?, ?, ?, ?, N'未支付')
-            """,
-            order_id,
-            user_id,
-            payment_no,
-            amount,
-        ).fetchone()
-    return int(row[0])
+def _next_no(cursor: Any, sequence_type: str) -> str:
+    result = procedure_result(
+        cursor,
+        """
+        DECLARE @new_no NVARCHAR(50);
+        EXEC sp_GetNextSeq @seq_type = ?, @new_no = @new_no OUTPUT;
+        SELECT @new_no AS newNo;
+        """,
+        sequence_type,
+    )
+    if not result or not result.get("newNo"):
+        raise ValueError("流水号生成失败")
+    return str(result["newNo"])
 
 
 def create_from_cart(
@@ -122,6 +80,20 @@ def create_from_cart(
                 raise ValueError("部分商品已下架")
             if int(row["stock"]) - int(row["lockedStock"] or 0) < int(row["quantity"]):
                 raise ValueError("部分商品库存不足，请修改后重新提交订单")
+        blocked_store = cursor.execute(
+            f"""
+            SELECT TOP 1 s.store_name
+            FROM cart_items c
+            JOIN book_items b ON b.book_item_id = c.book_item_id
+            JOIN stores s ON s.store_id = b.store_id
+            JOIN store_blacklists sb ON sb.store_id = b.store_id AND sb.user_id = c.user_id
+            WHERE c.user_id = ? AND c.book_item_id IN ({placeholders})
+            """,
+            user_id,
+            *unique_ids,
+        ).fetchone()
+        if blocked_store:
+            raise ValueError(f"您已被{blocked_store[0]}加入黑名单，无法提交订单")
 
         address = one(
             cursor.execute(
@@ -169,65 +141,39 @@ def create_from_cart(
             selected_user_coupon_id = int(coupon["userCouponId"])
             discount = min(float(coupon["amount"] or 0), total)
 
-        actual = max(0.0, total - discount)
-        order_no = _next_no(cursor, "ORD")
-        order_id = int(
-            cursor.execute(
+        items_json = json.dumps(
+            [{"bid": int(row["bookItemId"]), "qty": int(row["quantity"])} for row in rows]
+        )
+        try:
+            result = procedure_result(
+                cursor,
                 """
-                INSERT INTO orders(
-                    user_id, order_no, total_amount, discount_amount, actual_amount,
-                    receiver_name, receiver_phone, receiver_addr
-                )
-                OUTPUT INSERTED.order_id
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                DECLARE @success BIT, @order_id INT, @order_no NVARCHAR(50);
+                EXEC sp_CreateOrder
+                    @user_id = ?, @items_json = ?, @address_id = ?, @coupon_id = ?,
+                    @success = @success OUTPUT, @order_id = @order_id OUTPUT,
+                    @order_no = @order_no OUTPUT;
+                SELECT @success AS success, @order_id AS orderId, @order_no AS orderNo;
                 """,
                 user_id,
-                order_no,
-                total,
-                discount,
-                actual,
-                address["receiverName"],
-                address["phone"],
-                address["receiverAddress"],
-            ).fetchone()[0]
-        )
-        for row in rows:
-            quantity = int(row["quantity"])
-            subtotal = float(row["price"]) * quantity
-            cursor.execute(
-                "INSERT INTO order_items(order_id, book_item_id, quantity, unit_price, subtotal) VALUES (?, ?, ?, ?, ?)",
-                order_id,
-                row["bookItemId"],
-                quantity,
-                row["price"],
-                subtotal,
-            )
-            cursor.execute(
-                "UPDATE book_items SET locked_stock = locked_stock + ? WHERE book_item_id = ?",
-                quantity,
-                row["bookItemId"],
-            )
-        if selected_user_coupon_id is not None:
-            cursor.execute(
-                """
-                UPDATE user_coupons
-                SET status = N'已使用', used_time = SYSDATETIME(), order_id = ?
-                WHERE user_coupon_id = ?
-                """,
-                order_id,
+                items_json,
+                address_id,
                 selected_user_coupon_id,
             )
-        cursor.execute(
-            f"DELETE FROM cart_items WHERE user_id = ? AND book_item_id IN ({placeholders})",
-            user_id,
-            *unique_ids,
-        )
+        except pyodbc.Error as exc:
+            raise _procedure_error(exc, "订单创建失败，请稍后重试") from exc
+        if not result or not result.get("success") or not result.get("orderId"):
+            raise ValueError("订单创建失败，请稍后重试")
+        order_id = int(result["orderId"])
+        created = one(cursor.execute("SELECT * FROM orders WHERE order_id = ?", order_id))
+        if not created:
+            raise ValueError("订单创建失败，请稍后重试")
         return {
             "orderId": order_id,
-            "orderNo": order_no,
-            "totalAmount": total,
-            "discountAmount": discount,
-            "actualAmount": actual,
+            "orderNo": result["orderNo"],
+            "totalAmount": float(created["total_amount"]),
+            "discountAmount": float(created["discount_amount"]),
+            "actualAmount": float(created["actual_amount"]),
         }
 
 
@@ -268,49 +214,34 @@ def pay(user_id: int, order_id: int, payment_method: str) -> dict[str, Any]:
         if any(int(item["stock"] or 0) < int(item["quantity"]) for item in items):
             raise ValueError("部分商品库存不足，无法支付")
 
-        payment_no = _next_no(cursor, "PAY")
-        payment_id = _insert_payment_record(
-            cursor,
-            order_id,
-            user_id,
-            payment_no,
-            float(order["actual_amount"]),
-            payment_method,
-        )
-
-        for item in items:
-            quantity = int(item["quantity"])
-            cursor.execute(
+        try:
+            result = procedure_result(
+                cursor,
                 """
-                UPDATE book_items
-                SET stock = stock - ?,
-                    locked_stock = CASE WHEN locked_stock >= ? THEN locked_stock - ? ELSE 0 END,
-                    sales_count = sales_count + ?
-                WHERE book_item_id = ?
+                DECLARE @success BIT;
+                EXEC sp_PayOrder
+                    @order_id = ?, @payment_method = ?, @success = @success OUTPUT;
+                SELECT @success AS success;
                 """,
-                quantity,
-                quantity,
-                quantity,
-                quantity,
-                item["bookItemId"],
+                order_id,
+                _payment_method_name(payment_method),
             )
-        cursor.execute(
-            "UPDATE orders SET order_status = N'已完成', payment_status = N'已支付', paid_time = SYSDATETIME() WHERE order_id = ?",
-            order_id,
-        )
-        points = int(float(order["actual_amount"] or 0))
-        points_dao.add_points(conn, user_id, points, "购买", order_id)
-        cursor.execute(
-            "UPDATE payment_records SET payment_status = N'已支付', paid_time = SYSDATETIME() WHERE payment_id = ?",
-            payment_id,
-        )
-        cursor.execute(
-            "DELETE FROM cart_items WHERE user_id = ? AND book_item_id IN (SELECT book_item_id FROM order_items WHERE order_id = ?)",
-            user_id,
-            order_id,
+        except pyodbc.Error as exc:
+            raise _procedure_error(exc, "支付失败，请重新尝试") from exc
+        if not result or not result.get("success"):
+            raise ValueError("支付失败，请重新尝试")
+        payment = one(
+            cursor.execute(
+                "SELECT TOP 1 payment_no AS paymentNo FROM payment_records WHERE order_id = ? ORDER BY payment_id DESC",
+                order_id,
+            )
         )
         updated = one(cursor.execute("SELECT * FROM orders WHERE order_id = ?", order_id))
-        return {"paymentStatus": "success", "paymentNo": payment_no, "order": public_order(conn, updated)}
+        return {
+            "paymentStatus": "success",
+            "paymentNo": (payment or {}).get("paymentNo") or "",
+            "order": public_order(conn, updated),
+        }
 
 
 def _payment_success(conn: Any, order: dict[str, Any]) -> dict[str, Any]:
@@ -368,12 +299,18 @@ def _points_earned(conn: Any, row: dict[str, Any]) -> int:
 def public_order(conn: Any, row: dict[str, Any]) -> dict[str, Any]:
     order_to_front = {"待支付": "pending_payment", "已完成": "completed", "已取消": "cancelled", "已退款": "refunded"}
     pay_to_front = {"未支付": "unpaid", "已支付": "paid", "已退款": "refunded"}
+    refund_status = conn.cursor().execute(
+        "SELECT TOP 1 refund_status FROM refund_records WHERE order_id = ? ORDER BY refund_id DESC",
+        row["order_id"],
+    ).fetchval()
+    order_status = "refunding" if refund_status == "处理中" else order_to_front.get(row["order_status"], row["order_status"])
+    status_label = "退款中" if refund_status == "处理中" else row["order_status"]
     return {
         "orderId": row["order_id"],
         "orderNo": row["order_no"],
-        "orderStatus": order_to_front.get(row["order_status"], row["order_status"]),
+        "orderStatus": order_status,
         "paymentStatus": pay_to_front.get(row["payment_status"], row["payment_status"]),
-        "statusLabel": row["order_status"],
+        "statusLabel": status_label,
         "totalAmount": float(row["total_amount"]),
         "discountAmount": float(row["discount_amount"]),
         "actualAmount": float(row["actual_amount"]),
@@ -387,15 +324,10 @@ def public_order(conn: Any, row: dict[str, Any]) -> dict[str, Any]:
 
 
 def list_orders(user_id: int, status: str = "all") -> list[dict[str, Any]]:
-    db_status = {"pending_payment": "待支付", "completed": "已完成", "cancelled": "已取消", "refunded": "已退款"}.get(status)
-    where = "WHERE user_id = ?"
-    params: list[Any] = [user_id]
-    if db_status:
-        where += " AND order_status = ?"
-        params.append(db_status)
     with get_conn() as conn:
-        rows = many(conn.cursor().execute(f"SELECT * FROM orders {where} ORDER BY created_time DESC", *params))
-        return [public_order(conn, row) for row in rows]
+        rows = many(conn.cursor().execute("SELECT * FROM orders WHERE user_id = ? ORDER BY created_time DESC", user_id))
+        public = [public_order(conn, row) for row in rows]
+        return public if status == "all" else [order for order in public if order["orderStatus"] == status]
 
 
 def get_detail(user_id: int, order_id: int) -> dict[str, Any] | None:
@@ -508,14 +440,33 @@ def list_admin_orders(store_id: int | None = None) -> list[dict[str, Any]]:
         return [public_order(conn, row) for row in rows]
 
 
-def update_status(order_id: int, db_status: str) -> None:
-    with get_conn() as conn:
-        conn.cursor().execute("UPDATE orders SET order_status = ? WHERE order_id = ?", db_status, order_id)
+def _require_order_scope(cursor: Any, order_id: int, store_id: int | None) -> None:
+    if not cursor.execute("SELECT 1 FROM orders WHERE order_id = ?", order_id).fetchone():
+        raise ValueError("订单不存在")
+    if store_id is not None and not cursor.execute(
+        """
+        SELECT 1
+        FROM order_items oi
+        JOIN book_items b ON b.book_item_id = oi.book_item_id
+        WHERE oi.order_id = ? AND b.store_id = ?
+        """,
+        order_id,
+        store_id,
+    ).fetchone():
+        raise ValueError("无权限处理其他店铺的订单")
 
 
-def handle_refund(order_id: int, approved: bool) -> None:
+def update_status(order_id: int, db_status: str, store_id: int | None = None) -> None:
     with get_conn() as conn:
         cursor = conn.cursor()
+        _require_order_scope(cursor, order_id, store_id)
+        cursor.execute("UPDATE orders SET order_status = ? WHERE order_id = ?", db_status, order_id)
+
+
+def handle_refund(order_id: int, approved: bool, store_id: int | None = None) -> None:
+    with get_conn() as conn:
+        cursor = conn.cursor()
+        _require_order_scope(cursor, order_id, store_id)
         refund_row = one(
             cursor.execute(
                 """
@@ -537,31 +488,19 @@ def handle_refund(order_id: int, approved: bool) -> None:
             return
         if order["order_status"] != "已完成" or order["payment_status"] != "已支付":
             raise ValueError("订单当前状态无法退款")
-
-        cursor.execute(
-            """
-            UPDATE refund_records
-            SET refund_status = N'已退款', refund_time = SYSDATETIME()
-            WHERE refund_id = ?
-            """,
-            refund_row["refund_id"],
-        )
-        cursor.execute(
-            "UPDATE orders SET order_status = N'已退款', payment_status = N'已退款' WHERE order_id = ?",
-            order_id,
-        )
-        cursor.execute(
-            "UPDATE payment_records SET payment_status = N'已退款' WHERE payment_id = ?",
-            refund_row["payment_id"],
-        )
-        cursor.execute(
-            """
-            UPDATE b
-            SET stock = stock + oi.quantity,
-                sales_count = CASE WHEN sales_count >= oi.quantity THEN sales_count - oi.quantity ELSE 0 END
-            FROM book_items b
-            JOIN order_items oi ON oi.book_item_id = b.book_item_id
-            WHERE oi.order_id = ?
-            """,
-            order_id,
-        )
+        try:
+            result = procedure_result(
+                cursor,
+                """
+                DECLARE @success BIT;
+                EXEC sp_RefundOrder
+                    @order_id = ?, @refund_id = ?, @success = @success OUTPUT;
+                SELECT @success AS success;
+                """,
+                order_id,
+                refund_row["refund_id"],
+            )
+        except pyodbc.Error as exc:
+            raise _procedure_error(exc, "退款处理失败，请稍后重试") from exc
+        if not result or not result.get("success"):
+            raise ValueError("退款处理失败，请稍后重试")
