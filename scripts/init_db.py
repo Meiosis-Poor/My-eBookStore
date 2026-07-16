@@ -13,6 +13,7 @@ from backend.app.db import connect  # noqa: E402
 
 
 GO_RE = re.compile(r"^\s*GO\s*$", re.IGNORECASE | re.MULTILINE)
+USE_DATABASE_RE = re.compile(r"^\s*USE\s+(?:\[[^\]]+\]|[A-Za-z_][\w]*)\s*;?\s*$", re.IGNORECASE | re.MULTILINE)
 CREATE_TABLE_RE = re.compile(r"CREATE\s+TABLE\s+([A-Za-z_][\w]*)", re.IGNORECASE)
 MIGRATIONS = (
     ROOT / "database" / "01_buildlist.sql",
@@ -30,6 +31,10 @@ def split_batches(sql: str) -> list[str]:
 
 def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8-sig")
+
+
+def remove_database_switches(sql: str) -> str:
+    return USE_DATABASE_RE.sub("", sql)
 
 
 def table_exists(conn, table_name: str) -> bool:
@@ -83,8 +88,8 @@ def apply_migration(conn, path: Path) -> None:
             f"migration {migration_name} changed after it was applied; add a new migration instead"
         )
 
-    for batch in split_batches(read_text(path)):
-        if batch.upper().startswith(("CREATE DATABASE", "USE ")):
+    for batch in split_batches(remove_database_switches(read_text(path))):
+        if batch.upper().startswith("CREATE DATABASE"):
             continue
         if migration_name == "01_buildlist.sql":
             execute_if_needed(conn, batch)

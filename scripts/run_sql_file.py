@@ -11,6 +11,7 @@ from backend.app.db import connect  # noqa: E402
 
 
 GO_RE = re.compile(r"^\s*GO\s*$", re.IGNORECASE | re.MULTILINE)
+USE_DATABASE_RE = re.compile(r"^\s*USE\s+(?:\[[^\]]+\]|[A-Za-z_][\w]*)\s*;?\s*$", re.IGNORECASE | re.MULTILINE)
 
 
 def read_text(path: Path) -> str:
@@ -24,7 +25,8 @@ def main() -> None:
     if len(sys.argv) != 2:
         raise SystemExit("Usage: python scripts\\run_sql_file.py database\\99_test_seed.sql")
     sql_path = Path(sys.argv[1])
-    batches = [batch.strip() for batch in GO_RE.split(read_text(sql_path)) if batch.strip()]
+    sql = USE_DATABASE_RE.sub("", read_text(sql_path))
+    batches = [batch.strip() for batch in GO_RE.split(sql) if batch.strip()]
     with connect(autocommit=True) as conn:
         for batch in batches:
             conn.cursor().execute(batch)
