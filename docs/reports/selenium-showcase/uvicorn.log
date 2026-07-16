@@ -1,0 +1,683 @@
+INFO:     Started server process [35556]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:61302 (Press CTRL+C to quit)
+INFO:     127.0.0.1:61303 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58781 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58781 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51234 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61834 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54068 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50644 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53449 - "GET /js/home.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50644 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53449 - "GET /api/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53449 - "GET /api/books/recommended?limit=5&type=guess HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53449 - "GET /api/books/recommended?limit=5&type=hot HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50644 - "GET /login.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58781 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53449 - "GET /images/sl.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:50644 - "GET /images/xc.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:61834 - "GET /images/ky_math.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:54068 - "GET /images/ky_en.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51234 - "GET /images/ky_zz.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53449 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58781 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54068 - "GET /js/auth.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50644 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61834 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61834 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61834 - "GET /admin/dashboard.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58781 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53449 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61834 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51234 - "GET /js/admin/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50644 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54068 - "GET /css/admin.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54068 - "GET /js/admin/dashboard.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54068 - "GET /api/admin/statistics/overview?range=7d HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54068 - "GET /api/admin/orders?page=1&pageSize=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54068 - "GET /admin/books.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51234 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53449 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61834 - "GET /js/admin/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54068 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50644 - "GET /css/admin.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58781 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50644 - "GET /js/admin/books.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58781 - "GET /admin/orders.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50644 - "GET /api/admin/books?keyword= HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50644 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54068 - "GET /js/admin/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61834 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58781 - "GET /css/admin.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53449 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51234 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50644 - "GET /js/admin/orders.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50644 - "GET /api/admin/orders?status=all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50644 - "GET /admin/books.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50644 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61834 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54068 - "GET /js/admin/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58781 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51234 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53449 - "GET /css/admin.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58781 - "GET /js/admin/books.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58781 - "GET /api/admin/books?keyword= HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50499 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50499 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51608 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56960 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50991 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55911 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59995 - "GET /js/home.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59995 - "GET /api/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55911 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:55911 - "GET /login.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50499 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51608 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55911 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50991 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56960 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59995 - "GET /api/books/recommended?limit=5&type=guess HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56960 - "GET /js/auth.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56960 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56960 - "GET /admin/dashboard.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55911 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50991 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59995 - "GET /css/admin.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56960 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51608 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50499 - "GET /js/admin/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55911 - "GET /js/admin/dashboard.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55911 - "GET /api/admin/statistics/overview?range=7d HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55911 - "GET /api/admin/orders?page=1&pageSize=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55911 - "GET /admin/statistics.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55911 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50499 - "GET /css/admin.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51608 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59995 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56960 - "GET /js/admin/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50991 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56960 - "GET /js/admin/statistics.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50991 - "GET /admin/users.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59995 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50991 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50499 - "GET /css/admin.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59995 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50991 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50499 - "GET /js/admin/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59995 - "GET /js/admin/users.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55911 - "GET /api/admin/recommendation/settings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56960 - "GET /api/admin/statistics/risk-stores HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56960 - "GET /admin/stores.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51608 - "GET /api/admin/statistics/overview?range=7d HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51608 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50499 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56960 - "GET /css/admin.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50991 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55911 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56960 - "GET /js/admin/stores.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50991 - "GET /js/admin/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59995 - "GET /api/admin/users HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50991 - "GET /admin/promotions.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50991 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59995 - "GET /css/admin.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50499 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51608 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55911 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50991 - "GET /js/admin/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51608 - "GET /js/admin/promotions.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56960 - "GET /api/admin/stores HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56960 - "GET /api/admin/promotions/activities HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50991 - "GET /api/promotions/rewards HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62119 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62119 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60160 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51016 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63575 - "GET /js/home.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51016 - "GET /api/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63575 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51016 - "GET /api/books/recommended?limit=5&type=guess HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51016 - "GET /api/books/recommended?limit=5&type=hot HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51016 - "GET /images/xc.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51838 - "GET /images/ky_en.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:63575 - "GET /images/sl.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51799 - "GET /images/ky_zz.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:62119 - "GET /images/ky_math.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:62119 - "GET /login.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62119 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60160 - "GET /js/auth.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63575 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51016 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "GET /index.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51016 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62119 - "GET /js/home.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63575 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60160 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63575 - "GET /api/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63575 - "GET /api/books/recommended?limit=5&type=guess HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63575 - "GET /api/books/recommended?limit=5&type=hot HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "GET /images/ky_math.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51799 - "GET /images/xc.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:62119 - "GET /images/ky_en.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51016 - "GET /images/sl.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:60160 - "GET /images/ky_zz.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:60160 - "GET /search.html?keyword=Acceptance%20Book%207aaec69e&searchType=title HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60160 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51016 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62119 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63575 - "GET /js/search.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63575 - "GET /api/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62119 - "GET /api/books?keyword=Acceptance+Book+7aaec69e&searchType=title&sort=default&page=1&pageSize=12 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /images/pytorch.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51838 - "GET /images/ky_math.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:60160 - "GET /images/vue.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:63575 - "GET /images/dl.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51016 - "GET /images/ky_en.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:62119 - "POST /api/search/history HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63575 - "GET /images/algo.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:62119 - "GET /images/hlm.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:60160 - "GET /images/wc.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51838 - "GET /images/st.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51799 - "GET /images/rust.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51799 - "POST /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /cart.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51016 - "GET /js/cart.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63575 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62119 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60160 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "GET /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "GET /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "GET /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "PUT /api/cart/165 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "GET /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "GET /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "PUT /api/cart/165 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "GET /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "GET /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "GET /checkout.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60160 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63575 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51016 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /js/checkout.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62119 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "GET /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /api/addresses HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "GET /api/promotions/coupons/my?status=unused HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "POST /api/orders HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "GET /payment.html?orderId=56&amount=25&orderNo=ORD20260717000006 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51016 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62119 - "GET /js/payment.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60160 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63575 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "GET /api/orders/56 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "POST /api/orders/56/pay HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "GET /payment-result.html?status=success&orderId=56&orderNo=ORD20260717000006&amount=25 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60160 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62119 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /js/payment-result.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63575 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51016 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51016 - "GET /api/orders/56 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51016 - "GET /order-detail.html?id=56 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51016 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /js/order-detail.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63575 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62119 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60160 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62119 - "GET /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63575 - "GET /api/orders/56 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63575 - "POST /api/orders/56/reviews HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63575 - "GET /order-detail.html?id=56 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63575 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51016 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62119 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /js/order-detail.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60160 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "GET /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /api/orders/56 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "POST /api/orders/56/reviews HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:51799 - "GET /order-detail.html?id=56 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63575 - "GET /js/order-detail.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60160 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62119 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51838 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51016 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63575 - "GET /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /api/orders/56 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57194 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57194 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56254 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56862 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49877 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52868 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58975 - "GET /js/home.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52868 - "GET /api/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52868 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49877 - "GET /api/books/recommended?limit=5&type=guess HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49877 - "GET /api/books/recommended?limit=5&type=hot HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52868 - "GET /images/sl.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49877 - "GET /images/xc.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57194 - "GET /images/ky_zz.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:58975 - "GET /images/ky_en.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:56862 - "GET /images/ky_math.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:56862 - "GET /login.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52868 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56254 - "GET /js/auth.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49877 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57194 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58975 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56862 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58975 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58975 - "GET /index.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52868 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58975 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49877 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56862 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56254 - "GET /js/home.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57194 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57194 - "GET /api/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49877 - "GET /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49877 - "GET /api/books/recommended?limit=5&type=guess HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49877 - "GET /api/books/recommended?limit=5&type=hot HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56862 - "GET /images/ky_math.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49877 - "GET /images/xc.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57194 - "GET /images/sl.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:52868 - "GET /images/ky_en.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:58975 - "GET /images/ky_zz.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:58975 - "GET /search.html?keyword=Acceptance%20Book%20914ac264&searchType=title HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49877 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56254 - "GET /js/search.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56862 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58975 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52868 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57194 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49877 - "GET /api/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56862 - "GET /api/books?keyword=Acceptance+Book+914ac264&searchType=title&sort=default&page=1&pageSize=12 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58975 - "GET /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56862 - "GET /images/st.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:52868 - "GET /images/ky_zz.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57194 - "GET /images/sl.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49877 - "GET /images/dl.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:56254 - "GET /images/python.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:56254 - "GET /images/pf.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:58975 - "POST /api/search/history HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49877 - "GET /images/rust.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:58975 - "GET /images/algo.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57194 - "GET /images/xwz.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:52868 - "GET /images/wc.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:52868 - "POST /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52868 - "GET /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52868 - "GET /cart.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56862 - "GET /js/cart.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52868 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57194 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58975 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49877 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56254 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56254 - "GET /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56254 - "GET /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56254 - "GET /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56254 - "GET /checkout.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58975 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56254 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49877 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56862 - "GET /js/checkout.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57194 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52868 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56862 - "GET /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58975 - "GET /api/addresses HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56862 - "GET /api/promotions/coupons/my?status=unused HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56862 - "POST /api/orders HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56862 - "GET /payment.html?orderId=57&amount=25&orderNo=ORD20260717000007 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56862 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52868 - "GET /js/payment.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57194 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58975 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49877 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56254 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58975 - "GET /api/orders/57 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58975 - "GET /order-detail.html?id=57 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58975 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52868 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49877 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57194 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56862 - "GET /js/order-detail.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56254 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52868 - "GET /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56862 - "GET /api/orders/57 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56862 - "POST /api/orders/57/cancel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56862 - "GET /order-detail.html?id=57 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52868 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56862 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57194 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49877 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56254 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58975 - "GET /js/order-detail.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57194 - "GET /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49877 - "GET /api/orders/57 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65245 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65245 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56666 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50646 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59973 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53485 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49670 - "GET /js/home.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49670 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53485 - "GET /api/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49670 - "GET /orders.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56666 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65245 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49670 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50646 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59973 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49670 - "GET /js/orders.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53485 - "GET /api/books/recommended?limit=5&type=guess HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53485 - "GET /login.html?redirect=%2Forders.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50646 - "GET /js/auth.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49670 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56666 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59973 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53485 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65245 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53485 - "GET /orders.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59973 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56666 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49670 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65245 - "GET /js/orders.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50646 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53485 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59973 - "GET /api/cart HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:50646 - "GET /api/users/me HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:50646 - "GET /api/orders?status=all HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:50646 - "GET /login.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50646 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53485 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59973 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49670 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56666 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65245 - "GET /js/auth.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59973 - "GET /api/cart HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:59973 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59973 - "GET /index.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53485 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50646 - "GET /js/home.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56666 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65245 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59973 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49670 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56666 - "GET /api/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65245 - "GET /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56666 - "GET /api/books/recommended?limit=5&type=guess HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56666 - "GET /api/books/recommended?limit=5&type=hot HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65245 - "GET /images/sl.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:50646 - "GET /images/ky_zz.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:56666 - "GET /images/xc.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59973 - "GET /images/ky_math.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49670 - "GET /images/ky_en.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49670 - "GET /admin/dashboard.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49670 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59973 - "GET /css/admin.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65245 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53485 - "GET /js/admin/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50646 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56666 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53485 - "GET /js/admin/dashboard.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53485 - "GET /login.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53485 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49670 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59973 - "GET /js/auth.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56666 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65245 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50646 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56666 - "GET /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55393 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55393 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50058 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55991 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59105 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57935 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64700 - "GET /js/home.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64700 - "GET /api/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64700 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59105 - "GET /api/books/recommended?limit=5&type=guess HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59105 - "GET /api/books/recommended?limit=5&type=hot HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55991 - "GET /images/ky_math.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59105 - "GET /images/xc.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:64700 - "GET /images/sl.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57935 - "GET /images/ky_en.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:50058 - "GET /images/ky_zz.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57935 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59105 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55991 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57935 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50058 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64700 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55393 - "GET /js/home.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50058 - "GET /api/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50058 - "GET /api/books/recommended?limit=5&type=guess HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50058 - "GET /api/books/recommended?limit=5&type=hot HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57935 - "GET /images/xc.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:64700 - "GET /images/sl.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:55393 - "GET /images/ky_math.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:55991 - "GET /images/ky_en.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59105 - "GET /images/ky_zz.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59105 - "GET /promotions.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64700 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50058 - "GET /js/promotions.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57935 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55991 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55393 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59105 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50058 - "GET /login.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57935 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50058 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59105 - "GET /js/auth.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64700 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55393 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55991 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57935 - "GET /search.html?keyword=Acceptance%20Book%20096d4e1a&searchType=title HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55991 - "GET /js/search.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55393 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57935 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50058 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64700 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59105 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55991 - "GET /api/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55393 - "GET /api/books?keyword=Acceptance+Book+096d4e1a&searchType=title&sort=default&page=1&pageSize=12 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55393 - "POST /api/search/history HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64700 - "GET /images/go.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:55991 - "GET /images/pf.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59105 - "GET /images/nw.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:55393 - "GET /images/dl.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57935 - "GET /images/sl.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:50058 - "GET /images/algo.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59105 - "GET /images/hlm.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:50058 - "GET /images/bngd.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:55393 - "GET /images/xc.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57935 - "GET /images/vue.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:55991 - "GET /images/ky_en.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:55991 - "GET /book-detail.html?id=167 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55991 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55393 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64700 - "GET /js/book-detail.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50058 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59105 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57935 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64700 - "GET /api/books/167 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64700 - "GET /api/books/167/similar HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61068 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61068 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50285 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61799 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56548 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55125 - "GET /js/home.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49179 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49179 - "GET /api/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55125 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49179 - "GET /api/books/recommended?limit=5&type=guess HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49179 - "GET /api/books/recommended?limit=5&type=hot HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50285 - "GET /images/ky_zz.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:61799 - "GET /images/ky_en.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:56548 - "GET /images/ky_math.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:55125 - "GET /images/sl.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49179 - "GET /images/xc.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49179 - "GET /login.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55125 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49179 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50285 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61068 - "GET /js/auth.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61799 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56548 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56548 - "POST /api/auth/login HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:59809 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59809 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51931 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63197 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56544 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53000 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61066 - "GET /js/home.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61066 - "GET /api/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61066 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53000 - "GET /api/books/recommended?limit=5&type=guess HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53000 - "GET /api/books/recommended?limit=5&type=hot HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53000 - "GET /login.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61066 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56544 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51931 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59809 - "GET /js/auth.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53000 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63197 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53000 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53000 - "GET /index.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56544 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61066 - "GET /js/home.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53000 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59809 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51931 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63197 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53000 - "GET /api/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51931 - "GET /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53000 - "GET /api/books/recommended?limit=5&type=guess HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53000 - "GET /api/books/recommended?limit=5&type=hot HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59809 - "GET /images/ky_zz.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53000 - "GET /images/xc.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:56544 - "GET /images/ky_math.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51931 - "GET /images/sl.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:63197 - "GET /images/ky_en.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59722 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59722 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53971 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51640 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63923 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64194 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50394 - "GET /js/home.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64194 - "GET /api/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64194 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:63923 - "GET /api/books/recommended?limit=5&type=guess HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63923 - "GET /api/books/recommended?limit=5&type=hot HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63923 - "GET /login.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63923 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64194 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51640 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50394 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59722 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53971 - "GET /js/auth.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53971 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53971 - "GET /admin/dashboard.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59722 - "GET /css/admin.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64194 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63923 - "GET /js/admin/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50394 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51640 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53971 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63923 - "GET /js/admin/dashboard.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63923 - "GET /api/admin/statistics/overview?range=7d HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63923 - "GET /api/admin/orders?page=1&pageSize=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56438 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56438 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50069 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63017 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51509 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58087 - "GET /js/home.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54761 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58087 - "GET /api/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58087 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:54761 - "GET /api/books/recommended?limit=5&type=guess HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54761 - "GET /api/books/recommended?limit=5&type=hot HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54761 - "GET /login.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54761 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58087 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50069 - "GET /js/auth.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51509 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63017 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56438 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54761 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54761 - "GET /admin/dashboard.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63017 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54761 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56438 - "GET /js/admin/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51509 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50069 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58087 - "GET /css/admin.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63017 - "GET /js/admin/dashboard.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63017 - "GET /api/admin/statistics/overview?range=7d HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63017 - "GET /api/admin/orders?page=1&pageSize=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62001 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62001 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50563 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64361 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57632 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65025 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61349 - "GET /js/home.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61349 - "GET /api/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61349 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:65025 - "GET /api/books/recommended?limit=5&type=guess HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65025 - "GET /api/books/recommended?limit=5&type=hot HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65025 - "GET /login.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64361 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50563 - "GET /js/auth.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57632 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61349 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65025 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62001 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61349 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61349 - "GET /index.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57632 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50563 - "GET /js/common.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64361 - "GET /js/home.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65025 - "GET /js/api.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61349 - "GET /css/base.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62001 - "GET /js/mock-data.js?v=20260710-8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57632 - "GET /api/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65025 - "GET /api/cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57632 - "GET /api/books/recommended?limit=5&type=guess HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57632 - "GET /api/books/recommended?limit=5&type=hot HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50563 - "GET /images/ky_en.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:64361 - "GET /images/ky_math.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57632 - "GET /images/xc.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:65025 - "GET /images/sl.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:62001 - "GET /images/ky_zz.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:62001 - "POST /api/auth/logout HTTP/1.1" 200 OK
