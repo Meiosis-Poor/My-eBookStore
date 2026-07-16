@@ -5,9 +5,18 @@
 1. 创建独立的 SQL Server 数据库，例如 `My_eBookStore_Test`，不得使用开发或演示库。
 2. 将 `backend/.env.test.sample` 复制为本地 `backend/.env.test`，并将 `SQLSERVER_DATABASE` 改为该测试库。
 3. 初始化 schema、索引、存储过程、触发器和种子数据：按 README 顺序执行 `database/` 中的脚本，最后执行 `database/99_test_seed.sql`。
-4. 在 PowerShell 中设置 `$env:EBOOKSTORE_ENV_FILE = '.env.test'`，再执行 `pytest -m integration -v`；仅执行快速逻辑测试时运行 `pytest tests/test_embedding.py -v`。
+4. 在 PowerShell 中设置 `$env:EBOOKSTORE_ENV_FILE = '.env.test'`。运行常规集成测试使用 `pytest -m "integration and not performance" -v`，性能基线使用 `pytest -m performance -v`，纯逻辑测试使用 `pytest -m "not integration" -v`。
 
-测试产生的临时用户均以 `acceptance_` 开头，测试夹具会删除其关联订单、支付、积分、评价、地址、购物车与搜索记录。测试失败后应重新执行种子脚本恢复固定演示数据。
+交易测试使用 UUID 创建专用顾客、地址和图书，不修改种子图书。测试夹具会在 `finally` 中按外键顺序删除订单、支付、积分、评价、地址、购物车、图书与用户；会话结束时还会核对种子库存、销量、奖励库存和残留测试资源。
+
+需要完全重建测试库时执行：
+
+```powershell
+$env:EBOOKSTORE_ENV_FILE = '.env.test'
+python scripts/reset_test_db.py --confirm
+```
+
+重置工具仅接受名称以 `_Test` 结尾的数据库，并拒绝开发库和 SQL Server 系统库。数据库集成测试必须串行执行，不要使用 `pytest-xdist` 的并行参数。
 
 ## 自动化用例矩阵
 
@@ -18,7 +27,7 @@
 | AT-03 | 状态转换 | 取消待支付订单、申请退款并由平台审批 | 释放锁定库存；退款后恢复库存与销量 |
 | AT-04 | 权限矩阵 | 未登录、伪造 Token、顾客/卖家访问平台接口 | 返回 401/403 与统一错误响应 |
 | AT-05 | 等价类与安全 | 错误密码、ISBN 注入式输入、XSS 字符串 | 密码拒绝；请求稳定返回；ISBN 不扩大查询结果 |
-| AT-06 | 性能基线 | 图书列表、标题搜索、统计导出 | 默认阈值分别为 3 秒、3 秒、8 秒，可用环境变量调整 |
+| AT-06 | 性能基线 | 图书列表、标题搜索、统计导出 | 预热后采样 5 次，默认最大值阈值分别为 3 秒、3 秒、8 秒，可用环境变量调整 |
 
 ## 手工 UI 验收
 
@@ -26,4 +35,4 @@
 
 ## 报告模板
 
-报告需记录：测试日期、提交版本、测试数据库名、执行命令、用例总数/通过数/失败数、性能实测值、缺陷编号与严重级别、未测项和遗留风险。真实支付、跨浏览器自动化和高并发压测不属于本次课程验收范围。
+报告需记录：测试日期、提交版本、测试数据库名、执行命令、用例总数/通过数/失败数、性能中位数与最大值、缺陷编号与严重级别、未测项和遗留风险。完整验收应连续执行两次集成测试，两次均通过且无数据库隔离失败。真实支付、跨浏览器自动化和高并发压测不属于本次课程验收范围。

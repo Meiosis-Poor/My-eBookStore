@@ -1,41 +1,22 @@
 from __future__ import annotations
 
+from datetime import datetime
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
 from backend.app.db import connect, get_conn
 from backend.app.main import app
+from conftest import cleanup_customer, register_customer
 
 
 def _register_customer(client: TestClient, prefix: str) -> tuple[int, dict[str, str]]:
-    user_name = f"{prefix}_{uuid4().hex[:10]}"
-    registered = client.post(
-        "/api/auth/register/user",
-        json={"userName": user_name, "password": "Demo123", "nickname": user_name},
-    )
-    assert registered.status_code == 200, registered.json()
-    user_id = int(registered.json()["data"]["userId"])
-    logged_in = client.post(
-        "/api/auth/login",
-        json={"userName": user_name, "password": "Demo123", "role": "customer"},
-    )
-    token = logged_in.json()["data"]["token"]
-    return user_id, {"Authorization": f"Bearer {token}"}
+    customer = register_customer(client, f"workflow_{prefix}")
+    return customer["userId"], customer["headers"]
 
 
 def _delete_customer(user_id: int) -> None:
-    with get_conn() as conn:
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM user_coupons WHERE user_id = ?", user_id)
-        cursor.execute("DELETE FROM reward_redemptions WHERE user_id = ?", user_id)
-        cursor.execute("DELETE FROM checkin_record WHERE user_id = ?", user_id)
-        cursor.execute("DELETE FROM points_records WHERE user_id = ?", user_id)
-        cursor.execute("DELETE FROM cart_items WHERE user_id = ?", user_id)
-        cursor.execute("DELETE FROM shipping_addresses WHERE user_id = ?", user_id)
-        cursor.execute("DELETE FROM store_blacklists WHERE user_id = ?", user_id)
-        cursor.execute("DELETE FROM ordinary_users WHERE user_id = ?", user_id)
-        cursor.execute("DELETE FROM users WHERE user_id = ?", user_id)
+    cleanup_customer(user_id)
 
 
 def test_database_objects_and_blacklist_trigger() -> None:
@@ -96,6 +77,8 @@ def test_checkin_level_reward_and_coupon_expiration_procedures() -> None:
     client = TestClient(app)
     user_id, headers = _register_customer(client, "promotion")
     reward_id = None
+    reward_coupon_id = None
+    activity_id = None
     expired_coupon_id = None
     try:
         with get_conn() as conn:
@@ -104,17 +87,34 @@ def test_checkin_level_reward_and_coupon_expiration_procedures() -> None:
                 "UPDATE ordinary_users SET total_points = 1245, available_points = 10000 WHERE user_id = ?",
                 user_id,
             )
-            reward = cursor.execute(
-                """
-                SELECT TOP 1 reward_id, stock
-                FROM point_rewards
-                WHERE status = N'启用' AND required_level <= 2 AND stock > 0
-                ORDER BY required_points
-                """
-            ).fetchone()
-            assert reward is not None
-            reward_id, reward_stock = int(reward[0]), int(reward[1])
-            activity_id = int(cursor.execute("SELECT TOP 1 activity_id FROM promotion_activities").fetchval())
+            admin_id = int(cursor.execute("SELECT TOP 1 user_id FROM system_admins ORDER BY user_id").fetchval())
+            reward_name = f"10元workflow_coupon_{uuid4().hex[:10]}"
+            reward_id = int(
+                cursor.execute(
+                    """
+                    INSERT INTO point_rewards(
+                        reward_name, reward_type, required_points, required_level, stock, status, manage_admin
+                    ) OUTPUT INSERTED.reward_id
+                    VALUES (?, N'代金券', 10, 2, 2, N'启用', ?)
+                    """,
+                    reward_name,
+                    admin_id,
+                ).fetchone()[0]
+            )
+            reward_stock = 2
+            activity_id = int(
+                cursor.execute(
+                    """
+                    INSERT INTO promotion_activities(
+                        activity_name, activity_type, description, start_time, end_time, status, created_admin
+                    ) OUTPUT INSERTED.activity_id
+                    VALUES (?, N'test', N'workflow expiration test', DATEADD(day, -3, SYSDATETIME()),
+                            DATEADD(day, 3, SYSDATETIME()), N'进行中', ?)
+                    """,
+                    f"workflow_activity_{uuid4().hex[:10]}",
+                    admin_id,
+                ).fetchone()[0]
+            )
             expired_coupon_id = int(
                 cursor.execute(
                     """
@@ -146,7 +146,8 @@ def test_checkin_level_reward_and_coupon_expiration_procedures() -> None:
         assert redeemed.status_code == 200, redeemed.json()
         redeemed_data = redeemed.json()["data"]
         assert redeemed_data["rewardType"] == "coupon"
-        assert redeemed_data["coupon"]["validEnd"].startswith("2030-06-01 23:59:59")
+        assert datetime.fromisoformat(redeemed_data["coupon"]["validEnd"]) > datetime.now()
+        reward_coupon_id = int(redeemed_data["coupon"]["couponId"])
         expired = client.get("/api/promotions/coupons/my?status=expired", headers=headers)
         assert any(item["couponId"] == expired_coupon_id for item in expired.json()["data"])
 
@@ -158,26 +159,17 @@ def test_checkin_level_reward_and_coupon_expiration_procedures() -> None:
                 user_id,
             ).fetchone()
     finally:
-        with get_conn() as conn:
-            if reward_id is not None:
-                redemptions = int(
-                    conn.cursor().execute(
-                        "SELECT COUNT(*) FROM reward_redemptions WHERE user_id = ? AND reward_id = ?",
-                        user_id,
-                        reward_id,
-                    ).fetchval()
-                    or 0
-                )
-                if redemptions:
-                    conn.cursor().execute(
-                        "UPDATE point_rewards SET stock = stock + ? WHERE reward_id = ?",
-                        redemptions,
-                        reward_id,
-                    )
-            if expired_coupon_id is not None:
-                conn.cursor().execute("DELETE FROM user_coupons WHERE coupon_id = ?", expired_coupon_id)
-                conn.cursor().execute("DELETE FROM coupons WHERE coupon_id = ?", expired_coupon_id)
         _delete_customer(user_id)
+        with get_conn() as conn:
+            cursor = conn.cursor()
+            if expired_coupon_id is not None:
+                cursor.execute("DELETE FROM coupons WHERE coupon_id = ?", expired_coupon_id)
+            if reward_coupon_id is not None:
+                cursor.execute("DELETE FROM coupons WHERE coupon_id = ?", reward_coupon_id)
+            if reward_id is not None:
+                cursor.execute("DELETE FROM point_rewards WHERE reward_id = ?", reward_id)
+            if activity_id is not None:
+                cursor.execute("DELETE FROM promotion_activities WHERE activity_id = ?", activity_id)
 
 
 def test_admin_reward_coupon_configuration_and_redemption_delivery() -> None:
@@ -244,7 +236,7 @@ def test_admin_reward_coupon_configuration_and_redemption_delivery() -> None:
         configured = next(item for item in listed if item["rewardId"] == coupon_reward_id)
         assert configured["couponMinAmount"] == 100
         assert configured["couponAmount"] == 15
-        assert configured["couponValidEnd"].startswith("2030-06-01 23:59:59")
+        assert datetime.fromisoformat(configured["couponValidEnd"]) > datetime.now()
 
         redemptions = []
         for index in range(2):
@@ -265,7 +257,7 @@ def test_admin_reward_coupon_configuration_and_redemption_delivery() -> None:
         assert redemptions[0]["coupon"]["userCouponId"] != redemptions[1]["coupon"]["userCouponId"]
         assert redemptions[0]["coupon"]["amount"] == 15
         assert redemptions[0]["coupon"]["minAmount"] == 100
-        assert redemptions[0]["coupon"]["validEnd"].startswith("2030-06-01 23:59:59")
+        assert datetime.fromisoformat(redemptions[0]["coupon"]["validEnd"]) > datetime.now()
         coupon_id = int(redemptions[0]["coupon"]["couponId"])
 
         first_user_headers = _register_customer(client, "physical_reward")
@@ -302,12 +294,19 @@ def test_admin_reward_coupon_configuration_and_redemption_delivery() -> None:
                 cursor.execute("DELETE FROM coupons WHERE coupon_id = ?", coupon_id)
 
 
-def test_refund_request_store_scope_and_approval_procedure() -> None:
+def test_refund_request_store_scope_and_approval_procedure(acceptance_context) -> None:
     client = TestClient(app)
-    user_id, customer_headers = _register_customer(client, "refund")
+    user_id = acceptance_context["userId"]
+    customer_headers = acceptance_context["headers"]
     other_seller_id = None
     other_store_id = None
     order_id = None
+    book_item_id = acceptance_context["bookItemId"]
+    original_inventory = (
+        acceptance_context["stock"],
+        acceptance_context["lockedStock"],
+        acceptance_context["salesCount"],
+    )
     try:
         seller_login = client.post(
             "/api/auth/login",
@@ -315,25 +314,12 @@ def test_refund_request_store_scope_and_approval_procedure() -> None:
         ).json()["data"]
         seller_headers = {"Authorization": f"Bearer {seller_login['token']}"}
         seller_store_id = int(seller_login["user"]["storeId"])
-        with get_conn() as conn:
-            book = conn.cursor().execute(
-                "SELECT TOP 1 book_item_id, stock FROM book_items WHERE store_id = ? AND status = N'在售' AND stock > 0",
-                seller_store_id,
-            ).fetchone()
-            assert book is not None
-            book_item_id, original_stock = int(book[0]), int(book[1])
-
-        address = client.post(
-            "/api/addresses",
-            json={"receiverName": "退款测试", "phone": "13800000000", "addressDetail": "测试地址"},
-            headers=customer_headers,
-        ).json()["data"]
         assert client.post(
             "/api/cart", json={"bookItemId": book_item_id, "quantity": 1}, headers=customer_headers
         ).status_code == 200
         order = client.post(
             "/api/orders",
-            json={"cartItemIds": [book_item_id], "addressId": address["addressId"]},
+            json={"cartItemIds": [book_item_id], "addressId": acceptance_context["addressId"]},
             headers=customer_headers,
         )
         assert order.status_code == 200, order.json()
@@ -383,7 +369,10 @@ def test_refund_request_store_scope_and_approval_procedure() -> None:
                 "SELECT TOP 1 refund_status FROM refund_records WHERE order_id = ? ORDER BY refund_id DESC",
                 order_id,
             ).fetchval() == "已退款"
-            assert int(cursor.execute("SELECT stock FROM book_items WHERE book_item_id = ?", book_item_id).fetchval()) == original_stock
+            inventory = cursor.execute(
+                "SELECT stock, locked_stock, sales_count FROM book_items WHERE book_item_id = ?", book_item_id
+            ).fetchone()
+            assert tuple(int(value) for value in inventory) == original_inventory
 
         with get_conn() as conn:
             conn.cursor().execute(
@@ -403,7 +392,7 @@ def test_refund_request_store_scope_and_approval_procedure() -> None:
             )
         blocked_order = client.post(
             "/api/orders",
-            json={"cartItemIds": [book_item_id], "addressId": address["addressId"]},
+            json={"cartItemIds": [book_item_id], "addressId": acceptance_context["addressId"]},
             headers=customer_headers,
         )
         assert blocked_order.status_code == 400
@@ -411,14 +400,8 @@ def test_refund_request_store_scope_and_approval_procedure() -> None:
     finally:
         with get_conn() as conn:
             cursor = conn.cursor()
-            if order_id is not None:
-                cursor.execute("DELETE FROM refund_records WHERE order_id = ?", order_id)
-                cursor.execute("DELETE FROM payment_records WHERE order_id = ?", order_id)
-                cursor.execute("DELETE FROM order_items WHERE order_id = ?", order_id)
-                cursor.execute("DELETE FROM orders WHERE order_id = ?", order_id)
             if other_store_id is not None:
                 cursor.execute("DELETE FROM stores WHERE store_id = ?", other_store_id)
             if other_seller_id is not None:
                 cursor.execute("DELETE FROM store_admins WHERE user_id = ?", other_seller_id)
                 cursor.execute("DELETE FROM users WHERE user_id = ?", other_seller_id)
-        _delete_customer(user_id)

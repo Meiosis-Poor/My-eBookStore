@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from statistics import median
 from time import perf_counter
 
 import pytest
@@ -30,16 +31,31 @@ def test_authentication_and_role_boundaries(client, seeded_tokens) -> None:
 
 
 @pytest.mark.integration
-def test_search_input_is_treated_as_data(client) -> None:
-    injection = client.get("/api/books?keyword=%27%20OR%201%3D1--&searchType=isbn&page=1&pageSize=10")
+@pytest.mark.parametrize(
+    ("search_type", "expect_empty"),
+    [("title", False), ("author", True), ("isbn", True)],
+)
+def test_search_input_is_treated_as_data(client, search_type, expect_empty) -> None:
+    marker = "' OR 1=1--"
+    injection = client.get(
+        "/api/books",
+        params={"keyword": marker, "searchType": search_type, "page": 1, "pageSize": 10},
+    )
     assert injection.status_code == 200
     payload = injection.json()
     assert payload["code"] == 0
-    assert payload["data"]["total"] == 0
+    if expect_empty:
+        assert payload["data"]["total"] == 0
+    assert marker not in injection.text
 
-    xss = client.get("/api/books?keyword=%3Cscript%3Ealert(1)%3C%2Fscript%3E&searchType=title&page=1&pageSize=10")
+    xss_marker = "<script>acceptance_xss_marker</script>"
+    xss = client.get(
+        "/api/books",
+        params={"keyword": xss_marker, "searchType": search_type, "page": 1, "pageSize": 10},
+    )
     assert xss.status_code == 200
     assert xss.json()["code"] == 0
+    assert xss_marker not in xss.text
 
 
 @pytest.mark.integration
@@ -47,13 +63,28 @@ def test_search_input_is_treated_as_data(client) -> None:
 def test_course_acceptance_response_time_thresholds(client, seeded_tokens) -> None:
     public_limit = float(os.getenv("EBOOKSTORE_PUBLIC_API_LIMIT_SECONDS", "3"))
     export_limit = float(os.getenv("EBOOKSTORE_EXPORT_LIMIT_SECONDS", "8"))
-    for path in ("/api/books?page=1&pageSize=12", "/api/books?keyword=test&searchType=title&page=1&pageSize=12"):
-        started = perf_counter()
-        assert_ok(client.get(path))
-        assert perf_counter() - started < public_limit, f"{path} exceeded {public_limit}s"
-
-    started = perf_counter()
-    export = client.get("/api/admin/statistics/export?range=7d", headers=seeded_tokens["platform_admin"]["headers"])
-    assert export.status_code == 200
-    assert "date,storeName,bookName,quantity,salesAmount" in export.text
-    assert perf_counter() - started < export_limit, f"statistics export exceeded {export_limit}s"
+    cases = (
+        ("/api/books?page=1&pageSize=12", {}, public_limit),
+        ("/api/books?keyword=test&searchType=title&page=1&pageSize=12", {}, public_limit),
+        (
+            "/api/admin/statistics/export?range=7d",
+            seeded_tokens["platform_admin"]["headers"],
+            export_limit,
+        ),
+    )
+    for path, headers, limit in cases:
+        warmup = client.get(path, headers=headers)
+        assert warmup.status_code == 200
+        samples = []
+        for _ in range(5):
+            started = perf_counter()
+            response = client.get(path, headers=headers)
+            samples.append(perf_counter() - started)
+            assert response.status_code == 200
+            if "statistics/export" not in path:
+                assert response.json()["code"] == 0
+            else:
+                assert "date,storeName,bookName,quantity,salesAmount" in response.text
+        assert max(samples) < limit, (
+            f"{path} exceeded {limit}s; median={median(samples):.3f}s max={max(samples):.3f}s"
+        )

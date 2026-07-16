@@ -12,22 +12,13 @@ def scalar(sql: str, *params):
 
 
 @pytest.mark.integration
-def test_checkout_payment_is_idempotent_and_persists_consistent_state(client, temporary_customer) -> None:
-    headers = temporary_customer["headers"]
-    user_id = temporary_customer["userId"]
-    books = assert_ok(client.get("/api/books?inStockOnly=1&page=1&pageSize=20"))["list"]
-    book = next(item for item in books if int(item["stock"]) >= 2)
-    book_item_id = int(book["bookItemId"])
-    stock_before = int(scalar("SELECT stock FROM book_items WHERE book_item_id = ?", book_item_id))
-    sales_before = int(scalar("SELECT sales_count FROM book_items WHERE book_item_id = ?", book_item_id))
-
-    address_id = assert_ok(
-        client.post(
-            "/api/addresses",
-            json={"receiverName": "Acceptance", "phone": "13800000000", "detail": "Test address", "isDefault": True},
-            headers=headers,
-        )
-    )["addressId"]
+def test_checkout_payment_is_idempotent_and_persists_consistent_state(client, acceptance_context) -> None:
+    headers = acceptance_context["headers"]
+    user_id = acceptance_context["userId"]
+    book_item_id = acceptance_context["bookItemId"]
+    stock_before = acceptance_context["stock"]
+    sales_before = acceptance_context["salesCount"]
+    address_id = acceptance_context["addressId"]
     assert_ok(client.post("/api/cart", json={"bookItemId": book_item_id, "quantity": 1}, headers=headers))
     order = assert_ok(client.post("/api/orders", json={"cartItemIds": [book_item_id], "addressId": address_id}, headers=headers))
     order_id = int(order["orderId"])
@@ -52,40 +43,33 @@ def test_checkout_payment_is_idempotent_and_persists_consistent_state(client, te
 
 
 @pytest.mark.integration
-def test_insufficient_stock_does_not_create_an_order_or_change_inventory(client, temporary_customer) -> None:
-    headers = temporary_customer["headers"]
-    book = assert_ok(client.get("/api/books?inStockOnly=1&page=1&pageSize=20"))["list"][0]
-    book_item_id = int(book["bookItemId"])
-    stock = int(scalar("SELECT stock FROM book_items WHERE book_item_id = ?", book_item_id))
+def test_insufficient_stock_does_not_create_an_order_or_change_inventory(client, acceptance_context) -> None:
+    headers = acceptance_context["headers"]
+    book_item_id = acceptance_context["bookItemId"]
+    stock = acceptance_context["stock"]
     rejected = client.post("/api/cart", json={"bookItemId": book_item_id, "quantity": stock + 1}, headers=headers)
     assert rejected.status_code == 400
     assert rejected.json()["code"] != 0
     assert int(scalar("SELECT stock FROM book_items WHERE book_item_id = ?", book_item_id)) == stock
-    assert int(scalar("SELECT COUNT(*) FROM orders WHERE user_id = ?", temporary_customer["userId"])) == 0
+    assert int(scalar("SELECT COUNT(*) FROM orders WHERE user_id = ?", acceptance_context["userId"])) == 0
 
 
 @pytest.mark.integration
-def test_cancel_and_approved_refund_restore_reserved_or_sold_inventory(client, temporary_customer, seeded_tokens) -> None:
-    headers = temporary_customer["headers"]
-    book = next(item for item in assert_ok(client.get("/api/books?inStockOnly=1&page=1&pageSize=20"))["list"] if int(item["stock"]) >= 2)
-    book_item_id = int(book["bookItemId"])
-    stock_before = int(scalar("SELECT stock FROM book_items WHERE book_item_id = ?", book_item_id))
-    sales_before = int(scalar("SELECT sales_count FROM book_items WHERE book_item_id = ?", book_item_id))
-    address_id = assert_ok(
-        client.post(
-            "/api/addresses",
-            json={"receiverName": "Acceptance", "phone": "13800000000", "detail": "Test address", "isDefault": True},
-            headers=headers,
-        )
-    )["addressId"]
+def test_cancel_and_approved_refund_restore_reserved_or_sold_inventory(client, acceptance_context, seeded_tokens) -> None:
+    headers = acceptance_context["headers"]
+    book_item_id = acceptance_context["bookItemId"]
+    stock_before = acceptance_context["stock"]
+    locked_before = acceptance_context["lockedStock"]
+    sales_before = acceptance_context["salesCount"]
+    address_id = acceptance_context["addressId"]
 
     assert_ok(client.post("/api/cart", json={"bookItemId": book_item_id, "quantity": 1}, headers=headers))
     pending_id = int(assert_ok(client.post("/api/orders", json={"cartItemIds": [book_item_id], "addressId": address_id}, headers=headers))["orderId"])
-    assert int(scalar("SELECT locked_stock FROM book_items WHERE book_item_id = ?", book_item_id)) == 1
+    assert int(scalar("SELECT locked_stock FROM book_items WHERE book_item_id = ?", book_item_id)) == locked_before + 1
     cancelled = assert_ok(client.post(f"/api/orders/{pending_id}/cancel", headers=headers))
     assert cancelled["order"]["orderStatus"] == "cancelled"
     assert int(scalar("SELECT stock FROM book_items WHERE book_item_id = ?", book_item_id)) == stock_before
-    assert int(scalar("SELECT locked_stock FROM book_items WHERE book_item_id = ?", book_item_id)) == 0
+    assert int(scalar("SELECT locked_stock FROM book_items WHERE book_item_id = ?", book_item_id)) == locked_before
 
     assert_ok(client.post("/api/cart", json={"bookItemId": book_item_id, "quantity": 1}, headers=headers))
     paid_id = int(assert_ok(client.post("/api/orders", json={"cartItemIds": [book_item_id], "addressId": address_id}, headers=headers))["orderId"])

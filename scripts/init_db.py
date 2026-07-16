@@ -104,7 +104,7 @@ def apply_migration(conn, path: Path) -> None:
     print(f"applied migration: {migration_name}")
 
 
-def main() -> None:
+def initialize_database() -> None:
     with connect(database="master", autocommit=True) as master:
         master.cursor().execute(
             f"IF DB_ID(N'{settings.sqlserver_database}') IS NULL CREATE DATABASE [{settings.sqlserver_database}]"
@@ -116,6 +116,10 @@ def main() -> None:
         for migration in MIGRATIONS:
             apply_migration(conn, migration)
         print("database initialization succeeded.")
+
+
+def main() -> None:
+    initialize_database()
 
 
 if __name__ == "__main__":
