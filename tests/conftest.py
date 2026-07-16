@@ -114,6 +114,11 @@ def client() -> TestClient:
     return TestClient(app)
 
 
+@pytest.fixture
+def safe_client() -> TestClient:
+    return TestClient(app, raise_server_exceptions=False)
+
+
 def assert_ok(response) -> dict:
     payload = response.json()
     assert response.status_code == 200, payload

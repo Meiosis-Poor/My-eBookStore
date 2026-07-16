@@ -8,6 +8,7 @@ import pyodbc
 from fastapi import APIRouter, Body, Depends, FastAPI, Query, Response
 from fastapi.exceptions import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import FileResponse
 from starlette.types import Scope
@@ -31,6 +32,16 @@ from .dao import address_dao, book_dao, cart_dao, order_dao, promotion_dao, revi
 
 app = FastAPI(title=settings.app_name)
 app.add_exception_handler(HTTPException, http_exception_handler)
+
+
+def overflow_exception_handler(_: Any, __: OverflowError) -> JSONResponse:
+    return JSONResponse(
+        status_code=400,
+        content={"code": 1, "message": "integer value is outside the supported range", "data": None},
+    )
+
+
+app.add_exception_handler(OverflowError, overflow_exception_handler)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=list(settings.cors_origins) or ["*"],
@@ -69,6 +80,28 @@ STATUS_TO_DB = {"active": "正常", "banned": "封禁", "completed": "已完成"
 def page_slice(items: list[dict[str, Any]], page: int, page_size: int) -> list[dict[str, Any]]:
     start = max(page - 1, 0) * page_size
     return items[start : start + page_size]
+
+
+def payload_int(payload: dict[str, Any], field: str, *, default: int | None = None) -> int:
+    value = payload.get(field)
+    if value is None:
+        if default is not None:
+            return default
+        fail(f"{field}格式不正确")
+    if isinstance(value, bool):
+        fail(f"{field}格式不正确")
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str) and value.strip().lstrip("-").isdigit():
+        return int(value.strip())
+    fail(f"{field}格式不正确")
+
+
+def require_address_fields(payload: dict[str, Any]) -> None:
+    for field in ("receiverName", "phone", "detail"):
+        value = payload.get(field)
+        if not isinstance(value, str) or not value.strip():
+            fail(f"{field} is required")
 
 
 def normalize_book(row: dict[str, Any]) -> dict[str, Any]:
@@ -230,12 +263,16 @@ def register_seller(payload: dict[str, Any] = Body(...)) -> dict[str, Any]:
 
 @api.post("/auth/login")
 def login(payload: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    user_name = payload.get("userName")
+    password = payload.get("password")
     role = payload.get("role") or "customer"
+    if not all(isinstance(value, str) for value in (user_name, password, role)):
+        fail("login fields must be strings")
     user_type = ROLE_TO_DB.get(role)
     if not user_type:
         fail("账号类型不正确")
-    user = user_dao.get_auth_user_by_name(payload.get("userName"))
-    if not user or not verify_password(payload.get("password") or "", user["password_hash"]):
+    user = user_dao.get_auth_user_by_name(user_name)
+    if not user or not verify_password(password, user["password_hash"]):
         fail("用户名或密码错误", 401)
     if user["user_type"] != user_type:
         fail("账号类型与用户身份不匹配", 403)
@@ -405,8 +442,10 @@ def cart_list(user: dict[str, Any] = Depends(current_user)) -> dict[str, Any]:
 
 @api.post("/cart")
 def cart_add(payload: dict[str, Any] = Body(...), user: dict[str, Any] = Depends(current_user)) -> dict[str, Any]:
-    book_item_id = int(payload.get("bookItemId"))
-    quantity = max(int(payload.get("quantity") or 1), 1)
+    book_item_id = payload_int(payload, "bookItemId")
+    quantity = payload_int(payload, "quantity", default=1)
+    if quantity < 1:
+        fail("quantity必须大于0")
     book = book_dao.get_detail(book_item_id)
     if not book:
         fail("图书不存在或已下架", 404)
@@ -423,7 +462,9 @@ def cart_add(payload: dict[str, Any] = Body(...), user: dict[str, Any] = Depends
 
 @api.put("/cart/{bookItemId}")
 def cart_update(bookItemId: int, payload: dict[str, Any] = Body(...), user: dict[str, Any] = Depends(current_user)) -> dict[str, Any]:
-    quantity = max(int(payload.get("quantity") or 1), 1)
+    quantity = payload_int(payload, "quantity", default=1)
+    if quantity < 1:
+        fail("quantity必须大于0")
     stock = cart_dao.get_stock(bookItemId)
     if stock is None:
         fail("图书不存在", 404)
@@ -450,12 +491,14 @@ def split_address(detail: str) -> tuple[str, str, str, str]:
 
 @api.post("/addresses")
 def address_create(payload: dict[str, Any] = Body(...), user: dict[str, Any] = Depends(current_user)) -> dict[str, Any]:
+    require_address_fields(payload)
     address_id = address_dao.create(user["user_id"], payload)
     return ok({"addressId": address_id})
 
 
 @api.put("/addresses/{addressId}")
 def address_update(addressId: int, payload: dict[str, Any] = Body(...), user: dict[str, Any] = Depends(current_user)) -> dict[str, Any]:
+    require_address_fields(payload)
     address_dao.update(user["user_id"], addressId, payload)
     return ok({"ok": True})
 
@@ -468,17 +511,20 @@ def address_remove(addressId: int, user: dict[str, Any] = Depends(current_user))
 
 @api.post("/orders")
 def order_create(payload: dict[str, Any] = Body(...), user: dict[str, Any] = Depends(current_user)) -> dict[str, Any]:
-    ids = [int(x) for x in payload.get("cartItemIds") or []]
+    raw_ids = payload.get("cartItemIds") or []
+    if not isinstance(raw_ids, list):
+        fail("cartItemIds格式不正确")
+    ids = [payload_int({"value": item}, "value") for item in raw_ids]
     if not ids:
         fail("购物车中暂无商品")
-    address_id = payload.get("addressId")
-    if not address_id:
+    if payload.get("addressId") is None:
         fail("请选择有效收货地址")
+    address_id = payload_int(payload, "addressId")
     try:
         data = order_dao.create_from_cart(
             user_id=user["user_id"],
             book_item_ids=ids,
-            address_id=int(address_id),
+            address_id=address_id,
             coupon_id=payload.get("couponId"),
         )
     except ValueError as exc:
@@ -535,8 +581,8 @@ def order_review(orderId: int, payload: dict[str, Any] = Body(...), user: dict[s
         review_dao.create(
             user_id=user["user_id"],
             order_id=orderId,
-            book_item_id=int(payload.get("bookItemId")),
-            rating=int(payload.get("rating") or 5),
+            book_item_id=payload_int(payload, "bookItemId"),
+            rating=payload_int(payload, "rating", default=5),
             content=payload.get("content") or "",
         )
     except ValueError as exc:
@@ -601,7 +647,11 @@ def me(user: dict[str, Any] = Depends(current_user)) -> dict[str, Any]:
 
 
 @api.get("/users/me/points")
-def my_points(page: int = 1, pageSize: int = 20, user: dict[str, Any] = Depends(current_user)) -> dict[str, Any]:
+def my_points(
+    page: int = Query(1, ge=1),
+    pageSize: int = Query(20, ge=1, le=100),
+    user: dict[str, Any] = Depends(current_user),
+) -> dict[str, Any]:
     return ok(promotion_dao.list_points(user["user_id"], page, pageSize))
 
 @api.put("/users/me")
