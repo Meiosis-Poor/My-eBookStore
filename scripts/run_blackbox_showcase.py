@@ -14,6 +14,7 @@ sys.path.insert(0, str(ROOT))
 
 from backend.app.config import settings  # noqa: E402
 from scripts.reset_test_db import is_safe_test_database, reset_test_database  # noqa: E402
+from scripts.render_blackbox_report import render  # noqa: E402
 from tests.blackbox.coverage_matrix import write_markdown  # noqa: E402
 
 
@@ -80,7 +81,7 @@ def main() -> int:
                 f"- OpenAPI operations: `{matrix_stats['operations']}`",
                 f"- Matrix gaps: positive `{matrix_stats['positive_gaps']}`, authentication `{matrix_stats['authentication_gaps']}`, role `{matrix_stats['role_gaps']}`",
                 f"- Command: `{' '.join(command)}`",
-                "- Artifacts: `junit.xml`, `report.html`, `coverage-matrix.md`",
+                "- Artifacts: `readable-report.md`, `junit.xml`, `report.html`, `coverage-matrix.md`",
                 "",
                 "A zero exit code includes the session-level database state and artifact guard.",
             ]
@@ -88,6 +89,8 @@ def main() -> int:
         + "\n",
         encoding="utf-8",
     )
+    if junit.exists():
+        render(result_dir)
     print(f"black-box report: {summary}")
     return completed.returncode
 

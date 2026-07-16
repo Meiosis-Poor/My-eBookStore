@@ -36,7 +36,13 @@ Schemathesis 全路由契约检查可独立执行：
 
 ## 报告与复现
 
-展示结果写入 `test-results/blackbox/<timestamp>/`，包含 JUnit XML、自包含 HTML、逐接口覆盖矩阵和 Markdown 汇总。目录默认不提交；课程提交时可从中选择一次成功结果另行归档。
+展示结果写入 `test-results/blackbox/<timestamp>/`，包含面向教师阅读的 `readable-report.md`、JUnit XML、自包含 HTML、逐接口覆盖矩阵和 Markdown 汇总。目录默认不提交；课程提交时可从中选择一次成功结果另行归档。
+
+已有 JUnit 报告也可以单独转换：
+
+```powershell
+.\.venv\Scripts\python.exe scripts/render_blackbox_report.py test-results/blackbox/<timestamp>
+```
 
 失败输出包含 Hypothesis 最小化输入。使用报告中的 seed 重跑：
 
