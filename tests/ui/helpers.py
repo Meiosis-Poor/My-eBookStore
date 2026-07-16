@@ -21,3 +21,21 @@ def login(browser, wait, base_url: str, user_name: str, role: str = "customer", 
 
 def token(browser) -> str:
     return browser.execute_script("return localStorage.getItem('ebs_token') || '';")
+
+
+def browser_api(browser, path: str, method: str = "GET", body=None):
+    return browser.execute_async_script(
+        """
+        const [path, method, body, done] = arguments;
+        const token = localStorage.getItem('ebs_token') || '';
+        fetch('/api' + path, {
+          method,
+          headers: {'Content-Type':'application/json', ...(token ? {Authorization:'Bearer ' + token} : {})},
+          body: body === null ? undefined : JSON.stringify(body)
+        }).then(async r => done({status:r.status, payload:await r.json().catch(() => ({}))}))
+          .catch(e => done({status:0, payload:{message:e.message}}));
+        """,
+        path,
+        method,
+        body,
+    )

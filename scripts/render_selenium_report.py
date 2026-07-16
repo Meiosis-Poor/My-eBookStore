@@ -71,7 +71,7 @@ def render(report_dir: Path, *, commit: str, chrome_version: str, duration: floa
         "", "## 六、附件", "", "| 文件 | 用途 |", "| --- | --- |",
         "| `report.html` | 可筛选的 pytest HTML 报告 |", "| `junit.xml` | 机器可读测试结果 |",
         "| `screenshots/` | 成功流程关键截图 |", "| `failures/` | 失败截图、页面源码和控制台日志 |",
-        "| `case-matrix.md` | 28 个计划场景矩阵 |", "| `summary.md` | 环境、提交和执行命令 |",
+        f"| `case-matrix.md` | {len(CASES)} 个计划场景矩阵 |", "| `summary.md` | 环境、提交和执行命令 |",
     ])
     output = report_dir / "readable-report.md"
     output.write_text("\n".join(lines) + "\n", encoding="utf-8")
