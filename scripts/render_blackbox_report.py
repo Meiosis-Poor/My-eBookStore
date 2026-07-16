@@ -31,6 +31,48 @@ def _category(classname: str) -> str:
     return CATEGORY_NAMES.get(key, key)
 
 
+def _description(name: str) -> str:
+    indexed_descriptions = {
+        "test_invalid_login_equivalence_classes_never_reach_a_server_error[body0]": "登录请求缺少全部字段，应返回 4xx",
+        "test_invalid_login_equivalence_classes_never_reach_a_server_error[body1]": "正确用户名配错误密码，应拒绝登录",
+        "test_invalid_login_equivalence_classes_never_reach_a_server_error[body2]": "顾客账号选择卖家角色，应返回角色错误",
+        "test_invalid_login_equivalence_classes_never_reach_a_server_error[body3]": "用户名为对象类型，应返回 4xx 而非 5xx",
+        "test_invalid_login_equivalence_classes_never_reach_a_server_error[body4]": "密码为布尔类型，应返回 4xx 而非 5xx",
+        "test_invalid_login_equivalence_classes_never_reach_a_server_error[body5]": "角色为未知枚举值，应返回 4xx",
+        "test_invalid_cart_body_types_return_client_errors[body0]": "购物车请求体为空，应返回 4xx",
+        "test_invalid_cart_body_types_return_client_errors[body1]": "图书 ID 为 null，应返回 4xx",
+        "test_invalid_cart_body_types_return_client_errors[body2]": "图书 ID 为非数字字符串，应返回 4xx",
+        "test_invalid_cart_body_types_return_client_errors[body3]": "数量为非数字字符串，应返回 4xx",
+        "test_missing_address_fields_are_invalid[body0]": "地址请求体为空，应拒绝创建",
+        "test_missing_address_fields_are_invalid[body1]": "收件人为空，应拒绝创建地址",
+        "test_missing_address_fields_are_invalid[body2]": "联系电话为空，应拒绝创建地址",
+        "test_missing_address_fields_are_invalid[body3]": "详细地址为空，应拒绝创建地址",
+    }
+    if name in indexed_descriptions:
+        return indexed_descriptions[name]
+    descriptions = {
+        "test_invalid_login_equivalence_classes_never_reach_a_server_error": "非法登录输入应返回 4xx，不得进入服务端异常",
+        "test_invalid_registration_equivalence_classes": "无效用户名或密码应拒绝注册",
+        "test_valid_registration_boundaries": "用户名和密码有效边界应允许注册",
+        "test_search_invalid_type_and_malicious_text_never_crash": "非法搜索类型及恶意文本不得造成崩溃或反射",
+        "test_invalid_pagination_types_are_rejected": "非法分页类型应返回参数错误",
+        "test_invalid_cart_body_types_return_client_errors": "购物车错误字段类型应返回 4xx",
+        "test_non_positive_cart_quantities_are_invalid": "购物车数量为 0 或负数时应拒绝",
+        "test_cart_stock_plus_one_and_unknown_book_are_invalid": "超过库存或图书不存在时应拒绝加购",
+        "test_missing_address_fields_are_invalid": "收件人、电话或地址缺失时应拒绝",
+        "test_empty_cart_and_foreign_address_are_rejected": "空购物车和他人地址不得用于下单",
+        "test_review_rating_equivalence_classes": "评价评分 1/5 有效，0/6 无效",
+        "test_non_integer_review_rating_is_invalid": "非整数评分应返回 4xx",
+        "test_cart_actions_follow_a_state_model": "随机加购、修改、删除序列应符合购物车状态模型",
+        "test_every_api_operation_is_present_in_the_coverage_matrix": "全部 OpenAPI 操作应进入覆盖矩阵",
+        "test_authenticated_get_operations_never_break_contract": "认证 GET 接口应满足响应契约且无 5xx",
+        "test_unauthenticated_write_operations_never_return_5xx": "未认证写请求应被安全处理且无 5xx",
+        "test_protected_operations_reject_missing_token": "受保护接口缺少 Token 时应返回 401",
+        "test_admin_operations_reject_customer_role": "顾客访问后台接口时应返回 403",
+    }
+    return descriptions.get(name.split("[", 1)[0], "执行该用例定义的输入、状态和响应断言")
+
+
 def _hypothesis_examples(suite: ET.Element) -> tuple[int, int]:
     passing = invalid = 0
     properties = suite.find("properties")
@@ -147,11 +189,26 @@ def render(report_dir: Path) -> Path:
             "| 地址与订单 | 本人地址、非空购物车 | 缺失地址字段、空购物车、他人地址 | 合法下单成功；无效状态不创建订单 |",
             "| 支付与评价 | 合法支付、评分 1 和 5 | 重复操作、评分 0/6/非整数 | 幂等或明确拒绝，不产生重复数据 |",
             "| OpenAPI 契约 | 合法自动生成请求 | 缺字段、错误类型、边界及模糊输入 | 2xx 符合响应结构，4xx 可解释，无 5xx |",
-            "",
-            "## 五、失败明细",
-            "",
         ]
     )
+    lines.extend(
+        [
+            "",
+            "## 五、逐条测试用例",
+            "",
+            "| 编号 | 测试类别 | pytest 用例 | 验证内容 | 状态 | 耗时（秒） |",
+            "| ---: | --- | --- | --- | --- | ---: |",
+        ]
+    )
+    for index, case in enumerate(cases, start=1):
+        name = case.attrib.get("name", "unknown")
+        safe_name = name.replace("|", "\\|")
+        lines.append(
+            f"| {index} | {_category(case.attrib.get('classname', 'unknown'))} | `{safe_name}` | "
+            f"{_description(name)} | {_status(case)} | {float(case.attrib.get('time', 0)):.3f} |"
+        )
+
+    lines.extend(["", "## 六、失败与错误用例", ""])
     if failures:
         lines.extend(["| 用例 | 状态 | 错误摘要 |", "| --- | --- | --- |"])
         for name, status, detail in failures:
@@ -163,7 +220,7 @@ def render(report_dir: Path) -> Path:
     lines.extend(
         [
             "",
-            "## 六、附件",
+            "## 七、附件",
             "",
             "| 文件 | 用途 |",
             "| --- | --- |",
