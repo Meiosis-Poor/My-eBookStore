@@ -18,7 +18,7 @@ function renderBooksTable(list) {
     <tr>
       <td>
         <div class="cell-book">
-          <div class="mini-cover">${b.cover}</div>
+          <div class="mini-cover">${renderBookCover(b.cover, b.bookName)}</div>
           <div>
             <div style="font-weight:600">${b.bookName}</div>
             <div class="text-muted" style="font-size:12px">ISBN ${b.isbn}</div>

@@ -119,7 +119,7 @@ function renderOrderItems() {
     .map(
       (item) => `
       <div class="order-item-row">
-        <div class="mini-cover">${item.book.cover || "📘"}</div>
+        <div class="mini-cover">${renderBookCover(item.book.cover, item.book.bookName)}</div>
         <div style="flex:1">
           <div style="font-weight:600">${item.book.bookName}</div>
           <div class="text-muted" style="font-size:12px">${item.book.storeName} × ${item.quantity}</div>

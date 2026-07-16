@@ -68,7 +68,7 @@ function renderCart() {
                 <td><input type="checkbox" class="item-checkbox" value="${item.bookItemId}" ${selectedIds.has(String(item.bookItemId)) ? "checked" : ""} /></td>
                 <td>
                   <div class="cart-product">
-                    <div class="mini-cover">${item.book.cover || "📘"}</div>
+                    <div class="mini-cover">${renderBookCover(item.book.cover, item.book.bookName)}</div>
                     <div>
                       <div style="font-weight:600">${item.book.bookName}</div>
                       <div class="text-muted" style="font-size:12px">${item.book.author || ""}</div>

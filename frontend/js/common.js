@@ -73,6 +73,47 @@ function escapeHtml(str) {
   div.textContent = String(str ?? "");
   return div.innerHTML;
 }
+
+/* ---------- 图书封面 ---------- */
+const DEFAULT_BOOK_COVER = "📘";
+const BOOK_COVER_EMOJIS = new Set(["📕", "📗", "📘", "📙", "📔", "📒", "📓", "📚"]);
+
+/** 区分图片地址与历史数据中的图书表情。图片加载失败时由全局 error 监听切换为默认表情。 */
+function isImageCover(cover) {
+  const value = String(cover || "").trim();
+  return (
+    /^(?:https?:)?\/\//i.test(value) ||
+    /^(?:data:image\/|blob:)/i.test(value) ||
+    /^(?:\/|\.\.?\/)/.test(value) ||
+    /\.(?:avif|bmp|gif|jpe?g|png|svg|webp)(?:[?#].*)?$/i.test(value)
+  );
+}
+
+function renderBookCover(cover, bookName = "") {
+  const value = String(cover || "").trim();
+  if (!isImageCover(value)) {
+    const fallback = BOOK_COVER_EMOJIS.has(value) ? value : DEFAULT_BOOK_COVER;
+    return `<span class="book-cover-fallback" aria-hidden="true">${fallback}</span>`;
+  }
+  const alt = bookName ? `${bookName}封面` : "图书封面";
+  return `<img class="book-cover-image" src="${escapeHtml(value)}" alt="${escapeHtml(alt)}" loading="lazy"><span class="book-cover-fallback" aria-hidden="true" hidden>${DEFAULT_BOOK_COVER}</span>`;
+}
+
+function setBookCover(element, cover, bookName = "") {
+  if (element) element.innerHTML = renderBookCover(cover, bookName);
+}
+
+document.addEventListener(
+  "error",
+  (event) => {
+    const image = event.target;
+    if (!(image instanceof HTMLImageElement) || !image.classList.contains("book-cover-image")) return;
+    image.hidden = true;
+    const fallback = image.nextElementSibling;
+    if (fallback?.classList.contains("book-cover-fallback")) fallback.hidden = false;
+  },
+  true
+);
 /** 当前登录用户是否为管理员角色（书店管理员 / 后台管理员），二者均不具备购买行为 */
 function isAdminRole(user) {
   return !!user && (user.userType === "seller" || user.userType === "platform_admin");
@@ -169,7 +210,7 @@ function renderBookCard(book) {
     <a class="book-card" href="book-detail.html?id=${book.bookItemId}">
       <div class="book-cover">
         ${book.stock === 0 ? '<span class="badge badge-danger stock-tag">已售罄</span>' : ""}
-        <span>${book.cover || "📘"}</span>
+        ${renderBookCover(book.cover, book.bookName)}
       </div>
       <div class="book-info">
         <div class="book-title">${book.bookName}</div>
